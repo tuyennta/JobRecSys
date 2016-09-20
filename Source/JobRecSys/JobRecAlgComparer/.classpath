@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="config"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry kind="lib" path="lib/commons-cli-1.2.jar"/>
+	<classpathentry kind="lib" path="lib/commons-io-2.5.jar"/>
+	<classpathentry kind="lib" path="lib/jgoodies-forms-1.8.0-sources.jar"/>
+	<classpathentry kind="lib" path="lib/jgoodies-forms-1.8.0.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/maxent-2.5.2.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.36-bin.jar"/>
+	<classpathentry kind="lib" path="lib/opennlp-tools-1.4.3.jar"/>
+	<classpathentry kind="lib" path="lib/trove.jar"/>
+	<classpathentry kind="lib" path="lib/vn.hus.nlp.fsm-1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/vn.hus.nlp.sd-2.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/vn.hus.nlp.tokenizer-4.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/mahout-core-0.9-job.jar"/>
+	<classpathentry kind="lib" path="lib/hadoop-core-1.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-core-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-analyzers-common-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/vn.hus.nlp.utils-1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/evaluation-metrics.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
