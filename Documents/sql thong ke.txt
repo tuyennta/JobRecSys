@@ -1,0 +1,92 @@
+<<<<<<<<<<<<<<<<<Chi tiet rating tung user/job>>>>>>>>>>>>>>>>
+
+SELECT 					account.AccountId,
+						UserName,
+						abc.JobId,
+						abc.JobName,
+						abc.Description,
+						abc.Rating
+						
+
+FROM 					recsys.account 
+left join 				(
+							select   job_recommended.JobId,
+									 job.JobName,
+									 job_recommended.AccountId,
+									 job_recommended.Rating,
+									 category.CategoryId,
+									 category.Description
+							from	  job_recommended, job, category
+							where 	  job_recommended.JobId  = job.JobId
+							and		  job.CategoryId = category.CategoryId
+							and		  job_recommended.Rating > 0
+						) as abc
+on					     account.AccountId = abc.AccountId
+limit 0, 10000000000
+
+
+
+<<<<<<<<<<<<<<<<<Chi tiet rating tung user/nganhnghe>>>>>>>>>>>>>>>>
+
+SELECT 					account.AccountId,
+						UserName,
+						Email,						
+						abc.Description as nganhnghe,
+						count(abc.JobId) as soluong,
+						abc.Rating
+						
+
+FROM 					recsys.account 
+left join 				(
+							select   job_recommended.JobId,
+									 job.JobName,
+									 job_recommended.AccountId,
+									 job_recommended.Rating,
+									 category.CategoryId,
+									 category.Description
+							from	  job_recommended, job, category
+							where 	  job_recommended.JobId  = job.JobId
+							and		  job.CategoryId = category.CategoryId
+							and		  job_recommended.Rating > 0
+						) as abc
+on					     account.AccountId = abc.AccountId
+
+group by 
+						account.AccountId,
+						UserName,
+						Email,
+						abc.Rating,
+						abc.Description
+limit 0, 10000000000
+
+<<<<<<<<<<<<<<<<<< Thong ke nguoi dung + nganh nghe + truong + so luong rate >>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+SELECT 					
+						UserName,
+						account.Email,						
+						category.Description as NganhNghe,						
+						education.SchoolName as TenTruong,
+						count(job_recommended.JobId) as SoLuongRate
+						
+
+FROM 					education, resume, account, job_recommended, category, care
+
+where	 				care.CategoryId = category.CategoryId
+and						account.AccountId = care.AccountId
+
+and		  				job_recommended.Rating > 0
+and						job_recommended.AccountId = account.AccountId
+
+and						account.AccountId = resume.AccountId
+and						resume.ResumeId = education.ResumeId
+
+group by 
+
+						UserName,
+						account.Email,
+						NganhNghe,
+						TenTruong
+limit 0, 10000000000
+
+<<<<<<<<<<<<<<< Thong tin chi tiet nguoi dung >>>>>>>>>>>>>>>>>>
+select * from resume right join account on resume.AccountId = account.AccountId group by account.AccountId
