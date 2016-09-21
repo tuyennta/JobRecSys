@@ -1,16 +1,5 @@
 package recsys.evaluate;
 
-import recsys.algorithms.cbf.CB;
-import recsys.algorithms.collaborativeFiltering.CollaborativeFiltering;
-import recsys.algorithms.hybird.HybirdRecommeder;
-import recsys.datapreparer.CollaborativeFilteringDataPreparer;
-import recsys.datapreparer.ContentBasedDataPreparer;
-import uit.se.evaluation.dtos.ScoreDTO;
-import uit.se.evaluation.metrics.*;
-import uit.se.evaluation.utils.DatasetUtil;
-import utils.DbConfig;
-import utils.MysqlDBConnection;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +8,22 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+
+import recsys.algorithms.cbf.CB;
+import recsys.algorithms.collaborativeFiltering.CollaborativeFiltering;
+import recsys.algorithms.hybird.HybirdRecommeder;
+import recsys.datapreparer.CollaborativeFilteringDataPreparer;
+import recsys.datapreparer.ContentBasedDataPreparer;
+import uit.se.evaluation.dtos.ScoreDTO;
+import uit.se.evaluation.metrics.AveragePrecision;
+import uit.se.evaluation.metrics.FMeasure;
+import uit.se.evaluation.metrics.NDCG;
+import uit.se.evaluation.metrics.Precision;
+import uit.se.evaluation.metrics.RMSE;
+import uit.se.evaluation.metrics.Recall;
+import uit.se.evaluation.metrics.ReciprocalRank;
+import uit.se.evaluation.utils.DatasetUtil;
+import utils.MysqlDBConnection;
 
 /**
  * Created with IntelliJ IDEA. User: tuynguye Date: 8/12/16 Time: 9:47 AM To
@@ -282,7 +287,7 @@ public class Evaluation {
 		}
 
 		try {
-			MysqlDBConnection con = new MysqlDBConnection(DbConfig.load("config.properties"));
+			MysqlDBConnection con = new MysqlDBConnection("dbconfig.properties");
 			if (con.connect()) {
 				String sql = "INSERT INTO `evaluation`(`TaskId`, `Score`, `Metric`) VALUES ";
 				for (String key : evaluationResult.keySet()) {
@@ -290,7 +295,7 @@ public class Evaluation {
 				}
 				sql = sql.substring(0, sql.length() - 1);
 				con.write(sql);
-				con.write("update task set Status = 'done' where TaskId = " + taskId);
+				con.write("update task set Status = 'Done' where TaskId = " + taskId);
 				con.close();
 			}
 		} catch (Exception ex) {
@@ -334,7 +339,7 @@ public class Evaluation {
 	}
 
 	private void trainCF() {
-		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config);
+		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId);
 		cf.recommend();
 	}
 }

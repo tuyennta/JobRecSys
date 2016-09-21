@@ -6,22 +6,29 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MysqlDBConnection {
-	public String mysqlHost = "";
-	public String userName = "";
-	public String password = "";
+	private String mysqlHost = "";
+	private String userName = "";
+	private String password = "";
 	private Connection connection = null;
 
-	public MysqlDBConnection() {
-
-	}
-
+	/**
+	 * Initialize mysql connection by hard code parameter
+	 * @param host
+	 * @param user
+	 * @param pass
+	 */
 	public MysqlDBConnection(String host, String user, String pass) {
 		this.userName = user;
 		this.password = pass;
 		this.mysqlHost = host + "?useUnicode=true&characterEncoding=UTF-8";
 	}
 
-	public MysqlDBConnection(DbConfig conf) {
+	/**
+	 * Initialize mysql connection by configuration file
+	 * @param conf
+	 */
+	public MysqlDBConnection(String file_name) {
+		DbConfig conf = DbConfig.load(file_name);
 		this.userName = conf.userName;
 		this.password = conf.password;
 		this.mysqlHost = conf.host + conf.database + "?useUnicode=true&characterEncoding=UTF-8";
@@ -31,6 +38,10 @@ public class MysqlDBConnection {
 		return connection;
 	}
 
+	/**
+	 * Create a connection
+	 * @return
+	 */
 	public Boolean connect() {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -43,6 +54,11 @@ public class MysqlDBConnection {
 		return true;
 	}
 
+	/**
+	 * Execute an query
+	 * @param sql
+	 * @return
+	 */
 	public ResultSet read(String sql) {
 		ResultSet data = null;
 		try {
@@ -54,6 +70,11 @@ public class MysqlDBConnection {
 		return data;
 	}
 
+	/**
+	 * Execute an insert, update, delete query
+	 * @param sql
+	 * @return
+	 */
 	public Boolean write(String sql) {
 		try {
 			java.sql.Statement cmd = connection.createStatement();
@@ -66,6 +87,9 @@ public class MysqlDBConnection {
 		return true;
 	}
 
+	/**
+	 * Close current connection
+	 */
 	public void close() {
 		try {
 			this.connection.close();

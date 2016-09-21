@@ -39,10 +39,10 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	UserNeighborhood userNeighborhood;
 	List<Integer> listUserIds;
 
-	public CollaborativeFiltering(String inputDir, String outputDir) {
+	public CollaborativeFiltering(String inputDir, String outputDir, String taskId) {
 
 		/* prepare configuration */
-		super(inputDir, outputDir);
+		super(inputDir, outputDir, taskId);
 
 		/* learn model */
 		initModel();
@@ -51,10 +51,10 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		listUserIds = new CollaborativeFilteringDataPreparer(this.inputDirectory).getListUserId();
 	}
 
-	public CollaborativeFiltering(String evaluationDir, Properties config) {
+	public CollaborativeFiltering(String evaluationDir, Properties config, String taskId) {
 
 		/* prepare configuration */
-		super(evaluationDir, config);
+		super(evaluationDir, config, taskId);
 
 		/* learn model */
 		initModel();
@@ -73,6 +73,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			dataModel = new FileDataModel(new File(inputDirectory + "Score.txt"));
 		} catch (IOException e) {
 			e.printStackTrace();
+			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 
 		if (config.getProperty("cf.type").equals("UserBased")) {
@@ -89,6 +90,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 						param);
 			} catch (TasteException e) {
 				e.printStackTrace();
+				updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 			}
 		} else {
 			/* init item similarity measure */
@@ -96,6 +98,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 				initItemSimilaritymeasure(config.getProperty("cf.similarity"));
 			} catch (TasteException e) {
 				e.printStackTrace();
+				updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 			}
 		}
 	}
@@ -115,6 +118,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		default:
 			break;
 		}
+		updateDB("update task set Status = 'Done' where TaskId = " + taskId);
 	}
 
 	/**
@@ -138,6 +142,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 					}));
 		} catch (TasteException e) {
 			e.printStackTrace();
+			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 	}
 
@@ -162,6 +167,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 					}));
 		} catch (TasteException e) {
 			e.printStackTrace();
+			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 	}
 

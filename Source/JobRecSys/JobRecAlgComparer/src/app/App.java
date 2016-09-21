@@ -24,7 +24,7 @@ public class App {
 	private static void recommend(String[] args){
 		switch (args[1]) {
 		case "cf":
-			collaborativeFiltering(args[2], args[3]);
+			collaborativeFiltering(args[2], args[3], args[4]);
 			break;
 		case "cb":
 			contentBase(args[2], args[3]);
@@ -42,8 +42,8 @@ public class App {
 		eval.evaluate();
 	}
 
-	private static void collaborativeFiltering(String input, String output) {
-		CollaborativeFiltering cf = new CollaborativeFiltering(input, output);
+	private static void collaborativeFiltering(String input, String output, String taskId) {
+		CollaborativeFiltering cf = new CollaborativeFiltering(input, output, taskId);
 		cf.recommend();
 	}
 

@@ -1,9 +1,7 @@
 package utils;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 public class DbConfig {
@@ -13,6 +11,11 @@ public class DbConfig {
 	public String password = "";
 	public String database = "";
 
+	/**
+	 * Load database configuration file, properties file
+	 * @param file_name
+	 * @return
+	 */
 	public static DbConfig load(String file_name) {
 		DbConfig conf = new DbConfig();
 		Properties properties = new Properties();
