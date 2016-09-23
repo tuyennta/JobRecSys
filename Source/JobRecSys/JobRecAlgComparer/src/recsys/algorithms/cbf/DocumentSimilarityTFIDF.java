@@ -26,18 +26,27 @@ public class DocumentSimilarityTFIDF {
 
 
     public static final String CONTENT = "Content";
-    public static final int N = 2;//Total number of documents
+    public static int N = 0;//Total number of documents
     protected Directory _directory;
     protected Object lock = new Object();
 
     protected final Set<String> terms = new HashSet<>();
     protected  RealVector v1;
     protected  RealVector v2;
-
+    protected IndexReader reader ;
     public DocumentSimilarityTFIDF() {
+    	
     }
     
-
+    public void openReader() throws IOException
+    {
+    	reader = DirectoryReader.open(_directory);
+    }
+    public void closeReader() throws IOException
+    {
+    	reader.close();
+    }
+    
     public DocumentSimilarityTFIDF(String s1, String s2) throws IOException {
         Directory directory = createIndex(s1, s2);
         IndexReader reader = DirectoryReader.open(directory);
@@ -94,33 +103,30 @@ public class DocumentSimilarityTFIDF {
         Map<String, Double> f1 = getWieghts(reader, doc1);
         Map<String, Double> f2 = getWieghts(reader, doc2);
         reader.close();
-        v1 = toRealVector(f1);
-        v2 = toRealVector(f2);
-        double dotProduct = v1.dotProduct(v2);
-        double normalization = (v1.getNorm() * v2.getNorm());
+        RealVector _v1 = toRealVector(f1);
+        RealVector _v2 = toRealVector(f2);
+        double dotProduct = _v1.dotProduct(_v2);
+        double normalization = (_v1.getNorm() * _v2.getNorm());
         return dotProduct / normalization;
     }
     
-    public double getCosineSimilarityWithUserRating(int cv,ArrayList<Integer> arrayList, int job) throws IOException {
-        IndexReader reader = DirectoryReader.open(_directory);
+    public double getCosineSimilarityWithUserRating(int cv,ArrayList<Integer> arrayList, int job) throws IOException {        
         Map<String, Double> f1 = getWieghts(reader, cv);
-        Map<String, Double> f2 = getWieghts(reader, job);
-        reader.close();
-        
-        v1 = toRealVector(f1);
+        Map<String, Double> f2 = getWieghts(reader, job);              
+        RealVector _v1 = toRealVector(f1);
         if(arrayList != null)
         {
             for(int i : arrayList)
             {
             	Map<String, Double> p = getWieghts(reader, i);
             	RealVector v = toRealVector(p);
-            	v1 = v1.add(v);
+            	_v1 = _v1.add(v);
             }        	
         }
 
-        v2 = toRealVector(f2);
-        double dotProduct = v1.dotProduct(v2);
-        double normalization = (v1.getNorm() * v2.getNorm());
+        RealVector _v2 = toRealVector(f2);
+        double dotProduct = _v1.dotProduct(_v2);
+        double normalization = (_v1.getNorm() * _v2.getNorm());
         return dotProduct / normalization;
     }
     
@@ -177,7 +183,7 @@ public class DocumentSimilarityTFIDF {
         RealVector vector = new ArrayRealVector(terms.size());
         int i = 0;
         double value = 0;
-         synchronized(lock) {
+         //synchronized(lock) {
             
              for (String term : terms) {
                  if (map.containsKey(term)) {
@@ -187,7 +193,7 @@ public class DocumentSimilarityTFIDF {
                  }
                  vector.setEntry(i++, value);
              }
-         }
+         //}
         return vector;
     }
 
