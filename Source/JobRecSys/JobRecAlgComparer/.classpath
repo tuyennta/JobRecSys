@@ -22,5 +22,6 @@
 	<classpathentry kind="lib" path="lib/vn.hus.nlp.utils-1.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/evaluation-metrics.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.7.21.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
