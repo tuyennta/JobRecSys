@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpSession;
 
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import uit.se.recsys.bean.TaskBean;
@@ -113,6 +115,12 @@ public class EvaluationController {
 
 	bindingData(model);
 	return "evaluation";
+    }
+    
+    @RequestMapping(value="danh-gia-thuat-toan/updateTask", method=RequestMethod.POST, produces="application/json")
+    @ResponseBody
+    public HashMap<Integer, String> updateTask(){
+	return taskBO.getTaskStatus("eval");
     }
     
     private void saveUploadFile(String path, String name, MultipartFile file){

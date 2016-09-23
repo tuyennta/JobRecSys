@@ -28,8 +28,9 @@
 <!-- custom css -->
 <link rel="stylesheet" href="resources/css/main.css">
 
-<!-- custom query -->
-<script type="text/javascript" src="resources/js/home.js"></script>
+<!-- menu script -->
+<script type="text/javascript" src="resources/js/menu.js"></script>
+<script type="text/javascript" src="resources/js/ajax-home.js"></script>
 
 <!-- jquery ui -->
 <link rel="stylesheet"
@@ -102,9 +103,9 @@
 											out.write("<td><a href='#' title='" + tooltip);
 											out.write("' data-toggle='tooltip'>" + task.getAlgorithm() + "</a></td>");
 											out.write("<td>" + task.getDataset() + "</td>");
-											out.write("<td class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</td>");
+											out.write("<td>" + "<p class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</p></td>");
 										}
-									%>
+									%>									
 								</tbody>
 							</table>
 						</div>

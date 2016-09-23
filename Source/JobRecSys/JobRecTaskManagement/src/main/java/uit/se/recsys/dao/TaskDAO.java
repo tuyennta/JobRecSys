@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -53,7 +54,7 @@ public class TaskDAO {
 	return false;
     }
 
-    public List<TaskBean> getAllRecommendationTasks() {
+    public List<TaskBean> getRecommendationTasks() {
 	String sql = "select * from task where TaskType = 'rec'";
 	List<TaskBean> taskBeans = new ArrayList<TaskBean>();
 	try {
@@ -93,8 +94,9 @@ public class TaskDAO {
 	return config;
     }
 
-    public List<TaskBean> getAllEvaluationTasks() {
+    public List<TaskBean> getEvaluationTasks() {
 	String sql = "select * from task where TaskType = 'eval'";
+	
 	List<TaskBean> taskBeans = new ArrayList<TaskBean>();
 	try {
 	    connection = dataSource.getConnection();
@@ -124,6 +126,26 @@ public class TaskDAO {
 	    e.printStackTrace();
 	}
 	return taskBeans;
+    }
+    
+    public HashMap<Integer, String> getTaskStatus(String taskType){
+	String sql = "select TaskId, Status from task where TaskType = '" + taskType + "'";
+	HashMap<Integer, String> tasks = new HashMap<>();
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    ResultSet rs = stm.executeQuery();
+	    while(rs.next()){
+		tasks.put(rs.getInt("TaskId"), rs.getString("Status"));
+	    }
+	    rs.close();
+	    stm.close();
+	    connection.close();
+	    return tasks;
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return null;
+	}	
     }
 
     private List<MetricBean> getMetricOfTask(int taskId) {

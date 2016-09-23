@@ -64,7 +64,7 @@ public class LoginController {
 
     @RequestMapping(value = "/dang-xuat", method = RequestMethod.GET)
     public String logout(SessionStatus sessionStatus) {
-	sessionStatus.setComplete();
-	return "login";
+	sessionStatus.setComplete();		
+	return "redirect:/";
     }
 }

@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.servlet.http.HttpSession;
@@ -165,7 +166,7 @@ public class HomeController {
     
     @RequestMapping(value="trang-chu/updateTask", method=RequestMethod.POST, produces="application/json")
     @ResponseBody
-    public List<TaskBean> updateTask(){
-	return taskBO.getAllRecommendationTasks();
+    public HashMap<Integer, String> updateTask(){
+	return taskBO.getTaskStatus("rec");
     }
 }

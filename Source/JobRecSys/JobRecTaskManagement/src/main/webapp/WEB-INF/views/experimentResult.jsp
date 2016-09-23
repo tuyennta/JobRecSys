@@ -29,8 +29,8 @@
 <!-- custom css -->
 <link rel="stylesheet" href="resources/css/main.css">
 
-<!-- custom query -->
-<script type="text/javascript" src="resources/js/home.js"></script>
+<!-- menu script -->
+<script type="text/javascript" src="resources/js/menu.js"></script>
 
 <!-- datatable -->
 <link
