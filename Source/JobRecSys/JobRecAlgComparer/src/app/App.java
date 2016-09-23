@@ -11,18 +11,16 @@ public class App {
 	static Logger log = Logger.getLogger(App.class.getName());
 	public static void main(String[] args) {
 
-		log.error("fldsjafl");
-		
-//		switch (args[0]) {
-//		case "rec":
-//			recommend(args);
-//			break;
-//		case "eval":
-//			evaluate(args);
-//			break;
-//		default:
-//			break;
-//		}			
+		switch (args[0]) {
+		case "rec":
+			recommend(args);
+			break;
+		case "eval":
+			evaluate(args);
+			break;
+		default:
+			break;
+		}			
 	}
 	
 	private static void recommend(String[] args){
