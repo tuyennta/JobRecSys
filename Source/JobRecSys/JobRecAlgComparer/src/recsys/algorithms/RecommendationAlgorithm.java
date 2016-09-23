@@ -55,7 +55,7 @@ public abstract class RecommendationAlgorithm {
 		this.outputDirectory = outputDirectory;
 	}
 
-	protected void readConfiguration(String fileLocation) {
+	public void readConfiguration(String fileLocation) {
 		try {
 			config.load(new FileInputStream(fileLocation + "config.properties"));
 		} catch (IOException e) {

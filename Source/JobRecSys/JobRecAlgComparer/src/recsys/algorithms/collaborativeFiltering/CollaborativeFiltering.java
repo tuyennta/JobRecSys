@@ -129,7 +129,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
 		try {
 			writeOutput(userIDToRecommend, recommender.recommend(userIDToRecommend,
-					Integer.valueOf(config.getProperty("cf.recommendItems")), new IDRescorer() {
+					Integer.valueOf(config.getProperty("topn")), new IDRescorer() {
 						@Override
 						public double rescore(long userid, double originalSocre) {
 							return originalSocre;
@@ -154,7 +154,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
 		try {
 			writeOutput(userIDToRecommend, recommender.recommend(userIDToRecommend,
-					Integer.valueOf(config.getProperty("cf.recommendItems")), new IDRescorer() {
+					Integer.valueOf(config.getProperty("topn")), new IDRescorer() {
 						@Override
 						public double rescore(long userid, double originalSocre) {
 							return originalSocre;

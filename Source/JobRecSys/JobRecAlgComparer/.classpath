@@ -21,5 +21,6 @@
 	<classpathentry kind="lib" path="lib/lucene-analyzers-common-4.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/vn.hus.nlp.utils-1.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/evaluation-metrics.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-1.2.15.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

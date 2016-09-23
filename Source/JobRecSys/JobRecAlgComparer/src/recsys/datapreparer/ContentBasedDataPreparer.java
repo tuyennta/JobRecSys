@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -120,58 +121,34 @@ public class ContentBasedDataPreparer extends DataPreparer {
 		this.dataReader.close();
 	}
 
-	public void splitDataSet(String evalDir) {
-
-		dataReader.open(DataSetType.Job);
-		List<JobDTO> jobDataSet = getAllJobs();
-		List<JobDTO> jobTestingDataSet = new ArrayList<JobDTO>();
+	public void splitDataSet(String evalDir, int proportionOfTest) {
 
 		dataReader.open(DataSetType.Cv);
 		List<CvDTO> cvDataSet = getAllCVs();
 		List<CvDTO> cvTestingDataSet = new ArrayList<CvDTO>();
 
-		dataReader.setSource(evalDir + "testing\\");
-		dataReader.open(DataSetType.Score);
-		List<ScoreDTO> scoreDataSet = getAllScores();
-		List<Integer> users = getAllUsers(scoreDataSet);
-		List<Integer> jobs = getAllJobs(scoreDataSet);
-
-		JobDTO removeJob = null;
-		CvDTO removeCv = null;
-		for (Integer jobID : jobs) {
-			for (JobDTO job : jobDataSet) {
-				if (jobID == job.getJobId()) {
-					jobTestingDataSet.add(job);
-					removeJob = job;
-					break;
-				}
+		int fullSize = cvDataSet.size();
+		int testingSize = 0;
+		if (proportionOfTest * fullSize % 100 > 5)
+			testingSize = (int) (proportionOfTest * fullSize / 100 + 1);
+		else
+			testingSize = (int) (proportionOfTest * fullSize / 100);
+		for (int i = 0; i < testingSize; i++) {			
+			CvDTO dto = getRandomCv(fullSize, cvDataSet);
+			while (cvTestingDataSet.contains(dto)) {
+				dto = getRandomCv(fullSize, cvDataSet);
 			}
-			jobDataSet.remove(removeJob);
+			cvTestingDataSet.add(dto);
 		}
-		for (Integer userID : users) {
-			for (CvDTO cv : cvDataSet)
-				if (userID == cv.getAccountId()) {
-					cvTestingDataSet.add(cv);
-					removeCv = cv;
-					break;
-				}
-			cvDataSet.remove(removeCv);
-		}
+		cvDataSet.removeAll(cvTestingDataSet);		
 
-		writeJob(evalDir + "training\\", "job.txt", jobDataSet);
-		writeJob(evalDir + "testing\\", "job.txt", jobTestingDataSet);
 		writeCv(evalDir + "training\\", "cv.txt", cvDataSet);
 		writeCv(evalDir + "testing\\", "cv.txt", cvTestingDataSet);
 	}
-
-	private List<Integer> getAllUsers(List<ScoreDTO> listScore) {
-		List<Integer> users = new ArrayList<Integer>();
-		for (ScoreDTO score : listScore) {
-			if (!isOverlap(users, score.getUserId())) {
-				users.add(score.getUserId());
-			}
-		}
-		return users;
+	
+	private CvDTO getRandomCv(int maxRange, List<CvDTO> fullSet) {
+		int index = new Random().nextInt(maxRange);
+		return fullSet.get(index);
 	}
 
 	public void copyFileTo(String inputDir, String outputDir){
@@ -187,54 +164,6 @@ public class ContentBasedDataPreparer extends DataPreparer {
 		}
 	}
 	
-	private List<Integer> getAllJobs(List<ScoreDTO> listScore) {
-		List<Integer> jobs = new ArrayList<Integer>();
-		for (ScoreDTO score : listScore) {
-			if (!isOverlap(jobs, score.getJobId())) {
-				jobs.add(score.getJobId());
-			}
-		}
-		return jobs;
-	}
-
-	private boolean isOverlap(List<Integer> list, int id) {
-		for (Integer i : list) {
-			if (id == i) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private void writeJob(String destination, String fileName, List<JobDTO> dataSet) {
-		FileWriter fwr;
-		try {
-			File out = new File(destination);
-			if (!out.exists()) {
-				out.mkdirs();
-			}
-			File fileOut = new File(out.getAbsolutePath() + File.separator + fileName);
-			PrintWriter pw = new PrintWriter(fileOut);
-			pw.print("");
-			pw.close();
-			fwr = new FileWriter(fileOut, true);
-			fwr.write("");
-			BufferedWriter wr = new BufferedWriter(fwr);
-
-			for (JobDTO dto : dataSet) {
-				wr.write(dto.getJobId() + "\t" + dto.getJobName() + "\t" + dto.getLocation() + "\t" + dto.getSalary()
-						+ "\t" + dto.getCategory() + "\t" + dto.getRequirement() + "\t" + dto.getTags() + "\t"
-						+ dto.getDescription());
-				wr.newLine();
-			}
-
-			wr.close();
-			fwr.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	private void writeCv(String destination, String fileName, List<CvDTO> dataSet) {
 		FileWriter fwr;
 		try {

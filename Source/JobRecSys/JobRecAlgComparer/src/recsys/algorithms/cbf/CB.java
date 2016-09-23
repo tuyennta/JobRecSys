@@ -1,16 +1,9 @@
 package recsys.algorithms.cbf;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import dto.CvDTO;
 import dto.JobDTO;
 import dto.ScoreDTO;
@@ -23,8 +16,7 @@ public class CB extends RecommendationAlgorithm {
 	private DataSetReader dataSetReader = null;
 	private DocumentProcesser memDocProcessor = new DocumentProcesser();
 
-	public CB() {
-
+	public CB() {		
 	}
 
 	private void readDataSet() {
@@ -77,8 +69,7 @@ public class CB extends RecommendationAlgorithm {
 		if (memDocProcessor.open()) {
 			readDataSet();
 			memDocProcessor.close();
-			Collection<Future<Object>> futures = new LinkedList<Future<Object>>();
-			int topN = 10;
+			Collection<Future<Object>> futures = new LinkedList<Future<Object>>();			
 			//ExecutorService executor = Executors.newFixedThreadPool(3);
 			//ArrayList<Callable<Object>> todo = new ArrayList<Callable<Object>>(
 			//this.memDocProcessor.getListUsers().size());
@@ -88,7 +79,7 @@ public class CB extends RecommendationAlgorithm {
 				//sm.user_sm = i;
 				//sm.topN_sm = topN;
 				//todo.add(Executors.callable(sm));				
-				memDocProcessor.recommend(i, topN);
+				memDocProcessor.recommend(i, Integer.valueOf(config.getProperty("topn")));
 			}
 			//System.out.println(todo.size());
 			//futures.add((Future<Object>) executor.invokeAll(todo));

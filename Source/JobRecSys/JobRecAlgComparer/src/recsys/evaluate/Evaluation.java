@@ -50,7 +50,8 @@ public class Evaluation {
 		this.config = new Properties();
 		try {
 			config.load(new FileInputStream(evalDir + "config.properties"));
-			topN = Integer.valueOf(config.getProperty("cf.recommendItems"));
+			topN = Integer.valueOf(config.getProperty("topn"));
+			truthRank = Integer.valueOf(config.getProperty("relevant.score"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -64,7 +65,7 @@ public class Evaluation {
 		dataPreparer.splitDataSet(evaluationParam, evaluationDir);
 		if (!algorithm.equals("cf")) {
 			ContentBasedDataPreparer cbDataPreparer = new ContentBasedDataPreparer(inputDir);
-			cbDataPreparer.splitDataSet(evaluationDir);
+			cbDataPreparer.splitDataSet(evaluationDir, evaluationParam);
 		}
 
 		/**
@@ -137,7 +138,7 @@ public class Evaluation {
 			dataPreparer.splitDataSet(i, evaluationParam, inputDir, evaluationDir);
 			if (!algorithm.equals("cf")) {
 				ContentBasedDataPreparer cbDataPreparer = new ContentBasedDataPreparer(inputDir);
-				cbDataPreparer.splitDataSet(evaluationDir);
+				cbDataPreparer.splitDataSet(evaluationDir, evaluationParam);
 			}
 
 			/**
@@ -332,6 +333,7 @@ public class Evaluation {
 		CB cb = new CB();
 		cb.setInputDirectory(evaluationDir + "training\\");
 		cb.setOutputDirectory(evaluationDir + "result\\");
+		cb.readConfiguration(evaluationDir);
 		try {
 			cb.run();
 		} catch (Exception ex) {
