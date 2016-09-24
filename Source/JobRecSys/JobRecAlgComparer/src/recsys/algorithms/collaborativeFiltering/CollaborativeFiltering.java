@@ -38,6 +38,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	ItemSimilarity itemSimilarity;
 	UserNeighborhood userNeighborhood;
 	List<Integer> listUserIds;
+	boolean isEstimate = false;
 
 	public CollaborativeFiltering(String inputDir, String outputDir, String taskId) {
 
@@ -65,14 +66,12 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 
 	private void initModel() {
 
-		/* read configuration */
-		readConfiguration(configDirectory);
-
 		/* init data model */
 		try {
 			dataModel = new FileDataModel(new File(inputDirectory + "Score.txt"));
 		} catch (IOException e) {
 			e.printStackTrace();
+			log.error(e);
 			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 
@@ -83,13 +82,13 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 
 				/* init user neighborhood */
 				String param = config.getProperty("cf.neighborhood.param.topn");
-				if(param == null || param == "" ){
+				if (param == null || param == "") {
 					param = config.getProperty("cf.neighborhood.param.threshold");
 				}
-				initUserNeighborhood(config.getProperty("cf.neighborhood.type"),
-						param);
+				initUserNeighborhood(config.getProperty("cf.neighborhood.type"), param);
 			} catch (TasteException e) {
 				e.printStackTrace();
+				log.error(e);
 				updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 			}
 		} else {
@@ -97,28 +96,63 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			try {
 				initItemSimilaritymeasure(config.getProperty("cf.similarity"));
 			} catch (TasteException e) {
+				log.error(e);
 				e.printStackTrace();
 				updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 			}
 		}
 	}
 
-	public void recommend() {
+	public void recommend() {		
+		int startIndex = 0;
+		if(isEstimate){
+			startIndex = 1;
+		}		
 		switch (config.getProperty("cf.type")) {
+		
 		case "UserBased":
-			for (int userId : listUserIds) {
-				UserBased(userId);
+			for (int i = startIndex; i < listUserIds.size(); i++) {
+				UserBased(listUserIds.get(i));
 			}
 			break;
 		case "ItemBased":
-			for (Integer userId : listUserIds) {
-				ItemBased(userId);
+			for (int i = startIndex; i < listUserIds.size(); i++) {
+				ItemBased(listUserIds.get(i));
 			}
 			break;
 		default:
 			break;
 		}
 		updateDB("update task set Status = 'Done' where TaskId = " + taskId);
+	}
+
+	/**
+	 * Estimate execution time to recommend for all users
+	 * @return
+	 */
+	public long estimateRecommendationTime(long initModelTime) {
+		long recTime = 0;
+		long rStart = 0;
+		long rEnd = 0;
+		isEstimate = true;
+		switch (config.getProperty("cf.type")) {
+		case "UserBased":
+			rStart = System.currentTimeMillis();
+			UserBased(listUserIds.get(0));
+			rEnd = System.currentTimeMillis();
+			recTime = rEnd - rStart;
+			break;
+		case "ItemBased":
+			rStart = System.currentTimeMillis();
+			ItemBased(listUserIds.get(0));
+			rEnd = System.currentTimeMillis();
+			recTime = rEnd - rStart;
+			break;
+		}
+		long totalTime = recTime * listUserIds.size() + initModelTime;
+//		updateDB("update task set Status = '"+ totalTime + " remaining' where TaskId = " + taskId);
+		//total time to execute all recommendation
+		return totalTime;
 	}
 
 	/**
@@ -142,6 +176,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 					}));
 		} catch (TasteException e) {
 			e.printStackTrace();
+			log.error(e);
 			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 	}
@@ -167,6 +202,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 					}));
 		} catch (TasteException e) {
 			e.printStackTrace();
+			log.error(e);
 			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
 	}
@@ -251,6 +287,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			}
 			wr.close();
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}

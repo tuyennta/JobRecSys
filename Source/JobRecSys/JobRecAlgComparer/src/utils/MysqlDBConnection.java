@@ -5,11 +5,14 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.log4j.Logger;
+
 public class MysqlDBConnection {
 	private String mysqlHost = "";
 	private String userName = "";
 	private String password = "";
 	private Connection connection = null;
+	static Logger log = Logger.getLogger(MysqlDBConnection.class.getName());
 
 	/**
 	 * Initialize mysql connection by hard code parameter
@@ -47,8 +50,10 @@ public class MysqlDBConnection {
 			Class.forName("com.mysql.jdbc.Driver");
 			connection = DriverManager.getConnection(mysqlHost, userName, password);
 		} catch (ClassNotFoundException e) {
+			log.error(e);
 			return false;
 		} catch (SQLException e) {
+			log.error(e);
 			return false;
 		}
 		return true;
@@ -66,6 +71,7 @@ public class MysqlDBConnection {
 			data = cmd.executeQuery(sql);
 
 		} catch (SQLException e) {
+			log.error(e);
 		}
 		return data;
 	}
@@ -81,7 +87,7 @@ public class MysqlDBConnection {
 			return cmd.execute(sql);
 
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			log.error(e);
 			e.printStackTrace();
 		}
 		return true;
@@ -94,7 +100,7 @@ public class MysqlDBConnection {
 		try {
 			this.connection.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			log.error(e);
 			e.printStackTrace();
 		}
 	}

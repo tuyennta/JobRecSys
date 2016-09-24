@@ -142,8 +142,7 @@ public class ContentBasedDataPreparer extends DataPreparer {
 		}
 		cvDataSet.removeAll(cvTestingDataSet);		
 
-		writeCv(evalDir + "training\\", "cv.txt", cvDataSet);
-		writeCv(evalDir + "testing\\", "cv.txt", cvTestingDataSet);
+		writeCv(evalDir + "training\\", "cv.txt", cvDataSet);				
 	}
 	
 	private CvDTO getRandomCv(int maxRange, List<CvDTO> fullSet) {
@@ -160,6 +159,7 @@ public class ContentBasedDataPreparer extends DataPreparer {
 			FileUtils.copyFile(srcJobFile, destJobFile);
 			FileUtils.copyFile(srcCvFile, destCvFile);
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}
@@ -190,6 +190,7 @@ public class ContentBasedDataPreparer extends DataPreparer {
 			wr.close();
 			fwr.close();
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}

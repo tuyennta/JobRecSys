@@ -9,15 +9,18 @@ import org.apache.log4j.Logger;
 import utils.MysqlDBConnection;
 
 public abstract class RecommendationAlgorithm {
-	private static Logger log = Logger.getLogger("Author:Luan");
+
 	protected String inputDirectory;
 	protected String outputDirectory;
 	protected String testDirectory;
 	protected String configDirectory;
-	protected Properties config = new Properties();
+	protected Properties config;
 	protected String taskId;
+	
+	protected static Logger log = Logger.getLogger(RecommendationAlgorithm.class.getName());
 
 	public RecommendationAlgorithm() {
+		config = new Properties();
 	}
 
 	public void init() {
@@ -29,6 +32,7 @@ public abstract class RecommendationAlgorithm {
 		this.testDirectory = "";
 		this.configDirectory = output;
 		this.config = new Properties();
+		readConfiguration(configDirectory);
 		this.taskId = taskId;
 	}
 
@@ -36,7 +40,7 @@ public abstract class RecommendationAlgorithm {
 		this.inputDirectory = evaluationFolder + "training\\";
 		this.outputDirectory = evaluationFolder + "result\\";
 		this.testDirectory = evaluationFolder + "testing\\";
-		this.configDirectory = evaluationFolder;
+		this.configDirectory = evaluationFolder;		
 		this.config = config;
 		this.taskId = taskId;
 	}
@@ -57,11 +61,15 @@ public abstract class RecommendationAlgorithm {
 		this.outputDirectory = outputDirectory;
 	}
 
-	public void readConfiguration(String fileLocation) {
+	private void readConfiguration(String fileLocation) {
 		try {
 			config.load(new FileInputStream(fileLocation + "config.properties"));
 		} catch (IOException e) {
-			log.error(e.toString());
+			log.error(e);
+			e.printStackTrace();
+		}catch (NullPointerException ex){
+			log.error(ex);
+			ex.printStackTrace();
 		}
 	}
 	

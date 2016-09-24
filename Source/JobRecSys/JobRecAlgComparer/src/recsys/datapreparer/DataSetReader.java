@@ -8,12 +8,15 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 import dto.CvDTO;
 import dto.JobDTO;
 import dto.ScoreDTO;
+import recsys.evaluate.Evaluation;
 
 public class DataSetReader {
-
+	static Logger log = Logger.getLogger(DataSetReader.class.getName());
 	private int toInt(String data) {
 		try {
 			return Integer.parseInt(data);
@@ -67,8 +70,10 @@ public class DataSetReader {
 			buf = new BufferedReader(new InputStreamReader(new FileInputStream(source + file), "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
 			buf = null;
+			log.error(e);
 		} catch (FileNotFoundException e) {
 			buf = null;
+			log.error(e);
 		}
 	}
 
@@ -76,8 +81,10 @@ public class DataSetReader {
 		try {
 			buf = new BufferedReader(new InputStreamReader(new FileInputStream(_file), "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
+			log.error(e);
 			buf = null;
 		} catch (FileNotFoundException e) {
+			log.error(e);
 			buf = null;
 		}
 	}
@@ -91,7 +98,8 @@ public class DataSetReader {
 		try {
 			data = buf.readLine();
 		} catch (IOException e) {
-			close();
+			log.error(e);
+			close();			
 			return null;
 		}
 		if (data == null) {
@@ -117,6 +125,7 @@ public class DataSetReader {
 		try {
 			data = buf.readLine();
 		} catch (IOException e) {
+			log.error(e);
 			close();
 			return null;
 		}
@@ -145,6 +154,7 @@ public class DataSetReader {
 		try {
 			data = buf.readLine();
 		} catch (IOException e) {
+			log.error(e);
 			close();
 			return null;
 		}
@@ -164,7 +174,7 @@ public class DataSetReader {
 			try {
 				buf.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				log.error(e);
 				buf = null;
 			}
 			buf = null;

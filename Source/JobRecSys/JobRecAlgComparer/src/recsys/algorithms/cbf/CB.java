@@ -16,15 +16,16 @@ public class CB extends RecommendationAlgorithm {
 	private DataSetReader dataSetReader = null;
 	private DocumentProcesser memDocProcessor = new DocumentProcesser();
 	private boolean trainMode = false; 
-	public CB(boolean _trainMode) {	
-		trainMode = _trainMode;
+	public CB(String input, String output, String taskId, boolean _trainMode) {	
+		super(input, output, taskId);
+		trainMode = _trainMode;		
 	}
 
 	public void trainModel()
 	{
 		try {
 			log.info("Start training model");
-			dataSetReader = new DataSetReader(outputDirectory + "traning\\");
+			dataSetReader = new DataSetReader(outputDirectory + "training\\");
 			dataSetReader.open(DataSetType.Score);
 			log.info("Read labeled data");
 			ScoreDTO sdto = null;
@@ -113,7 +114,15 @@ public class CB extends RecommendationAlgorithm {
 			}
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
-			memDocProcessor.writeFile(outputDirectory);
+			if(trainMode)
+			{
+				memDocProcessor.writeFile(outputDirectory + "result\\");
+			}
+			else
+			{
+				memDocProcessor.writeFile(outputDirectory );					
+			}
+			updateDB("update task set Status = 'Done' where TaskId = " + taskId);
 			log.info("Finish CB");
 		}
 

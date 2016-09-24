@@ -1,7 +1,5 @@
 package app;
 
-import java.io.IOException;
-
 import org.apache.log4j.Logger;
 
 import recsys.algorithms.cbf.CB;
@@ -10,34 +8,19 @@ import recsys.algorithms.hybird.HybirdRecommeder;
 import recsys.evaluate.Evaluation;
 
 public class App {
-	static Logger log = Logger.getLogger(App.class.getName());
+	public static Logger log = Logger.getLogger(App.class.getName());
 
 	public static void main(String[] args) {
-
-		CB cb = new CB(false);
-		cb.setInputDirectory("E:\\DATA\\In\\");
-		cb.setOutputDirectory("E:\\DATA\\Ot\\");
-		cb.readConfiguration("E:\\DATA\\Ot\\");
-
-		try {
-			cb.run();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		switch (args[0]) {
+		case "rec":
+			recommend(args);
+			break;
+		case "eval":
+			evaluate(args);
+			break;
+		default:
+			break;
 		}
-
-		// case "rec":
-		// recommend(args);
-		// break;
-		// case "eval":
-		// evaluate(args);
-		// break;
-		// default:
-		// break;
-		// }
 	}
 
 	private static void recommend(String[] args) {
@@ -77,10 +60,7 @@ public class App {
 
 	private static void contentBase(String input, String output, String taskId) {
 
-		CB cb = new CB(false);
-		cb.setInputDirectory(input);
-		cb.setOutputDirectory(output);
-		cb.readConfiguration(output);
+		CB cb = new CB(input, output, taskId, false);
 		try {
 			cb.run();
 		} catch (Exception ex) {

@@ -7,9 +7,11 @@ import dto.ScoreDTO;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 public class DataPreparer {
 	protected DataSetReader dataReader = null;
-
+	static Logger log = Logger.getLogger(DataPreparer.class.getName());
 	public DataPreparer(String dir) {
 		dataReader = new DataSetReader(dir);
 	}

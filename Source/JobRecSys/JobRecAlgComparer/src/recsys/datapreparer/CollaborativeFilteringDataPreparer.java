@@ -117,10 +117,11 @@ public class CollaborativeFilteringDataPreparer extends DataPreparer {
 	
 	public void copyFileTo(String input, String output){		
 		try {
-			File srcFile = new File(input);
-			File destFile = new File(output);
+			File srcFile = new File(input + "Score.txt");
+			File destFile = new File(output + "Score.txt");
 			FileUtils.copyFile(srcFile, destFile);
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}
@@ -148,6 +149,7 @@ public class CollaborativeFilteringDataPreparer extends DataPreparer {
 			wr.close();
 			fwr.close();
 		} catch (IOException e) {
+			log.error(e);
 			e.printStackTrace();
 		}
 	}
