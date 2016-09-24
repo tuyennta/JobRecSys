@@ -130,6 +130,16 @@ public class DocumentSimilarityTFIDF {
         return dotProduct / normalization;
     }
     
+	public void addTermModel(int doc){     
+    	
+        try {
+			extractTerm(reader, doc);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}        
+    }
+    
     
     public void indexAllDocument(HashMap<Integer, String> allDocument) throws IOException {
         _directory = new RAMDirectory();
@@ -178,8 +188,37 @@ public class DocumentSimilarityTFIDF {
         }
         return tf_Idf_Weights;
     }
+    
+    public void extractTerm(IndexReader reader, int docId)
+            throws IOException {
+        Terms vector = reader.getTermVector(docId, CONTENT);        
+        TermsEnum termsEnum = null;       
+        termsEnum = vector.iterator(termsEnum);
+        BytesRef text = null;
+        while ((text = termsEnum.next()) != null) {
+            String term = text.utf8ToString();                   
+            terms.add(term);
+        }       
+    }
 
     public RealVector toRealVector(Map<String, Double> map) {
+        RealVector vector = new ArrayRealVector(terms.size());
+        int i = 0;
+        double value = 0;
+         //synchronized(lock) {
+            
+             for (String term : terms) {
+                 if (map.containsKey(term)) {
+                     value = map.get(term);
+                 } else {
+                     value = 0;
+                 }
+                 vector.setEntry(i++, value);
+             }
+         //}
+        return vector;
+    }
+    public RealVector toRealVector(Map<String, Double> map, Map<String, Double> world) {
         RealVector vector = new ArrayRealVector(terms.size());
         int i = 0;
         double value = 0;

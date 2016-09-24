@@ -4,8 +4,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.index.IndexWriter;
@@ -14,7 +16,7 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
 public class DocumentProcesser extends DocumentSimilarityTFIDF {
-
+	private static Logger log = Logger.getLogger("Author: Luan");
 	public DocumentProcesser() {
 		_directory = new RAMDirectory();
 
@@ -24,7 +26,6 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	private HashMap<String, Integer> users = new HashMap<String, Integer>();
 	private HashMap<String, Integer> jobs = new HashMap<String, Integer>();
 	private int currentIndex = 0;
-	private Object sync = new Object();
 
 	public Set<String> getListUsers() {
 		return users.keySet();
@@ -64,6 +65,19 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 		}
 	}
 
+	
+	public void buildTermModel()
+	{
+		for(String i : users.keySet())
+		{
+			addTermModel(users.get(i));
+		}
+		for(String i : jobs.keySet())
+		{
+			addTermModel(jobs.get(i));
+		}
+	}
+	
 	public void addJob(String jobId, String content) {
 
 		try {
@@ -107,6 +121,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 		for (String userid : users.keySet()) {
 			int userDoc = users.get(userid);
 			int i = 0;
+			log.info("Recommend for user " + userid);
 			for (String jobid : jobs.keySet()) {
 				int itemDoc = jobs.get(jobid);
 				try {
@@ -115,11 +130,14 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 					TopNscore[i] = val;
 					max_score = val > max_score ? val : max_score;
 					System.out.println("Cos between " + userid + " and " + jobid + " is " + val);
+					i++;
 				} catch (IOException e) {
-					e.printStackTrace();
+					log.error(e);
 				}
 			}
+			log.info("write file data " + userid + " Job count "  + TopNjob.length);
 			writeFile(userid, TopNjob, TopNscore, max_score, path);
+			log.info("write file data is done");
 		}
 	}
 
@@ -163,6 +181,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	public void writeFile(String user, String[] topJobs, double[] topScore, double max, String path) {
 		try {
 			FileWriter fw = new FileWriter(path + "Score.txt", true);
+			log.info("open file to write: " + path + "Score.txt");
 			System.out.println("Start writing result!");
 			for (int i = 0; i < topJobs.length; i++) {
 
@@ -171,9 +190,10 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 				System.out.println(_rs);
 				fw.append(_rs + "\r\n");
 			}
+			log.info("close file: " + path + "Score.txt");
 			fw.close();
 		} catch (Exception e) {
-			// TODO: handle exception
+			log.error(e);
 		}
 
 	}

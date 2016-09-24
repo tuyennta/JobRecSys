@@ -1,9 +1,9 @@
 package recsys.algorithms.cbf;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.concurrent.Future;
+
+import org.apache.log4j.Logger;
+
 import dto.CvDTO;
 import dto.JobDTO;
 import dto.ScoreDTO;
@@ -12,15 +12,37 @@ import recsys.datapreparer.DataSetReader;
 import recsys.datapreparer.DataSetType;
 
 public class CB extends RecommendationAlgorithm {
-
+	static Logger log = Logger.getLogger("Author: Luan");
 	private DataSetReader dataSetReader = null;
 	private DocumentProcesser memDocProcessor = new DocumentProcesser();
-
-	public CB() {		
+	private boolean trainMode = false; 
+	public CB(boolean _trainMode) {	
+		trainMode = _trainMode;
 	}
 
-	private void readDataSet() {
+	public void trainModel()
+	{
+		try {
+			log.info("Start training model");
+			dataSetReader = new DataSetReader(outputDirectory + "traning\\");
+			dataSetReader.open(DataSetType.Score);
+			log.info("Read labeled data");
+			ScoreDTO sdto = null;
+			while ((sdto = dataSetReader.nextScore()) != null) {
+				if (sdto.getScore() > 3) {
+					memDocProcessor.addRating(sdto.getUserId() + "", sdto.getJobId() + "");
+				}
+			}
+			log.info("Train model end");
+		} catch (Exception e) {
+			log.error(e);
+		}
+	}
+	
+	private void createDataModel() {
+		log.info("create dataset reader");
 		dataSetReader = new DataSetReader(this.inputDirectory);
+		log.info("read cv from dataset");
 		dataSetReader.open(DataSetType.Cv);
 		CvDTO cvdto = null;
 		System.out.println("Build user profile");
@@ -34,10 +56,11 @@ public class CB extends RecommendationAlgorithm {
 			content += cvdto.getLanguage() + ". ";
 			memDocProcessor.addCv(itemId, content);
 		}
+		log.info("read cv done");
 		dataSetReader = new DataSetReader(this.inputDirectory);
+		log.info("read jobs from dataset");
 		dataSetReader.open(DataSetType.Job);
-
-		System.out.println("Build item profile");
+		log.info("Building item profile");		
 		JobDTO dto = null;
 		int count = 0;
 		while ((dto = dataSetReader.nextJob()) != null) {
@@ -51,40 +74,47 @@ public class CB extends RecommendationAlgorithm {
 			content += dto.getCategory() + ". ";
 			memDocProcessor.addJob(itemId, content);
 		}
-
+		log.info("Building item done");		
 		dataSetReader = new DataSetReader(this.inputDirectory);
-		dataSetReader.open(DataSetType.Job);
+		dataSetReader.open(DataSetType.Score);
 
-		System.out.println("Build item profile");
-		ScoreDTO sdto = null;
-		while ((sdto = dataSetReader.nextScore()) != null) {
-			if (sdto.getScore() > 3) {
-				memDocProcessor.addRating(sdto.getUserId() + "", sdto.getJobId() + "");
-			}
+		if(trainMode)
+		{
+			
+			trainModel();
 		}
+		else
+		{
+			log.info("Read labeled data");
+			ScoreDTO sdto = null;
+			while ((sdto = dataSetReader.nextScore()) != null) {
+				if (sdto.getScore() > 3) {
+					memDocProcessor.addRating(sdto.getUserId() + "", sdto.getJobId() + "");
+				}
+			}
+			log.info("Read labeled data is done");
+		}
+						
 	}
 
 	public void run() throws IOException, InterruptedException {
 
+		log.info("open Lucene writer");
 		if (memDocProcessor.open()) {
-			readDataSet();
+			log.info("open Lucene writer successful");
+			createDataModel();
 			memDocProcessor.close();
-			Collection<Future<Object>> futures = new LinkedList<Future<Object>>();			
-			//ExecutorService executor = Executors.newFixedThreadPool(3);
-			//ArrayList<Callable<Object>> todo = new ArrayList<Callable<Object>>(
-			//this.memDocProcessor.getListUsers().size());
+			log.info("Close lucene writer");
 			memDocProcessor.openReader();
-			for (String i : this.memDocProcessor.getListUsers()) {
-				//SmallTask sm = new SmallTask();
-				//sm.user_sm = i;
-				//sm.topN_sm = topN;
-				//todo.add(Executors.callable(sm));				
+			memDocProcessor.buildTermModel();
+			log.info("Open lucene reader");
+			for (String i : this.memDocProcessor.getListUsers()) {				
 				memDocProcessor.recommend(i, Integer.valueOf(config.getProperty("topn")));
 			}
-			//System.out.println(todo.size());
-			//futures.add((Future<Object>) executor.invokeAll(todo));
 			memDocProcessor.closeReader();
+			log.info("Close lucene reader");
 			memDocProcessor.writeFile(outputDirectory);
+			log.info("Finish CB");
 		}
 
 	}
@@ -93,12 +123,20 @@ public class CB extends RecommendationAlgorithm {
 		try {
 			
 			if (memDocProcessor.open()) {
-				readDataSet();
+				log.info("open lucene writer");
+				log.info("Start to read and index data");
+				createDataModel();
+				log.info("Read and index data is done");
 				memDocProcessor.close();
+				log.info("open lucene writer");
+				log.info("Open lucene reader");
 				memDocProcessor.openReader();
+				memDocProcessor.buildTermModel();
 				memDocProcessor.recommend(outputDirectory);
 				memDocProcessor.closeReader();
-				memDocProcessor.writeFile(outputDirectory);
+				log.info("Close lucene reader");
+				//memDocProcessor.writeFile(outputDirectory);
+				log.info("Write file");
 			}
 			
 			this.memDocProcessor.recommend(outputDirectory);

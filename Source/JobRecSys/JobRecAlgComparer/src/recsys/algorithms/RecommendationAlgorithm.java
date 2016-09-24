@@ -4,15 +4,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
+
 import utils.MysqlDBConnection;
 
 public abstract class RecommendationAlgorithm {
-
+	private static Logger log = Logger.getLogger("Author:Luan");
 	protected String inputDirectory;
 	protected String outputDirectory;
 	protected String testDirectory;
 	protected String configDirectory;
-	protected Properties config;
+	protected Properties config = new Properties();
 	protected String taskId;
 
 	public RecommendationAlgorithm() {
@@ -59,7 +61,7 @@ public abstract class RecommendationAlgorithm {
 		try {
 			config.load(new FileInputStream(fileLocation + "config.properties"));
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.toString());
 		}
 	}
 	

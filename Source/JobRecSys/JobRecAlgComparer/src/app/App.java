@@ -1,5 +1,7 @@
 package app;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 
 import recsys.algorithms.cbf.CB;
@@ -9,21 +11,36 @@ import recsys.evaluate.Evaluation;
 
 public class App {
 	static Logger log = Logger.getLogger(App.class.getName());
+
 	public static void main(String[] args) {
 
-		switch (args[0]) {
-		case "rec":
-			recommend(args);
-			break;
-		case "eval":
-			evaluate(args);
-			break;
-		default:
-			break;
-		}			
+		CB cb = new CB(false);
+		cb.setInputDirectory("E:\\DATA\\In\\");
+		cb.setOutputDirectory("E:\\DATA\\Ot\\");
+		cb.readConfiguration("E:\\DATA\\Ot\\");
+
+		try {
+			cb.run();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		// case "rec":
+		// recommend(args);
+		// break;
+		// case "eval":
+		// evaluate(args);
+		// break;
+		// default:
+		// break;
+		// }
 	}
-	
-	private static void recommend(String[] args){
+
+	private static void recommend(String[] args) {
 		switch (args[1]) {
 		case "cf":
 			collaborativeFiltering(args[2], args[3], args[4]);
@@ -33,13 +50,13 @@ public class App {
 			break;
 		case "hb":
 			hybrid(args[2], args[3]);
-			break;			
+			break;
 		default:
 			break;
 		}
 	}
-	
-	private static void evaluate(String[] args){
+
+	private static void evaluate(String[] args) {
 		Evaluation eval = new Evaluation(args[2], Integer.valueOf(args[3]), args[1], args[4], args[5], args[6]);
 		eval.evaluate();
 	}
@@ -60,9 +77,10 @@ public class App {
 
 	private static void contentBase(String input, String output, String taskId) {
 
-		CB cb = new CB();
+		CB cb = new CB(false);
 		cb.setInputDirectory(input);
 		cb.setOutputDirectory(output);
+		cb.readConfiguration(output);
 		try {
 			cb.run();
 		} catch (Exception ex) {
