@@ -32,17 +32,22 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	}
 
 	public void addRating(String user, String job) {
+		if(!jobs.containsKey(job)) 
+		{
+			return;
+		}			
 		if (rating.containsKey(user)) {
+			
 			ArrayList<Integer> userLike = rating.get(user);
 			userLike.add(jobs.get(job));
 			rating.put(user, userLike);
-		} else {
-			ArrayList<Integer> userLike = new ArrayList<Integer>();
-			userLike.add(jobs.get(job));
-			rating.put(user, userLike);
+		} else {			
+				ArrayList<Integer> userLike = new ArrayList<Integer>();
+				userLike.add(jobs.get(job));
+				rating.put(user, userLike);	
+			
 		}
 	}
-
 	private Analyzer analyzer = new SimpleAnalyzer(Version.LUCENE_CURRENT);
 	private IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_CURRENT, analyzer);
 	private IndexWriter writer;
@@ -178,6 +183,45 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 		result.add(tmp);
 	}
 
+	
+	public void recommend(String userid, int topN, int threadid) throws IOException {
+
+		System.out.println("Thread "+threadid+" Reccomend for userid " + userid);
+		double[] TopNscore = new double[topN];
+		String[] TopNjob = new String[topN];
+		double max_score = 0.0d;
+		for (int i = 0; i < topN; i++) {
+			TopNjob[i] = "";
+			TopNscore[i] = 0;
+		}
+
+		int userDoc = users.get(userid);
+		for (String jobid : jobs.keySet()) {
+			int itemDoc = jobs.get(jobid);
+			try {
+				double val = getCosineSimilarityWithUserRating(userDoc, rating.get(userid), itemDoc);
+				System.out.println("Thread "+threadid+" Similarity between " + userDoc + " and " + jobid + " is:" + val);
+				for (int i = 0; i < topN; i++) {
+					if (val > TopNscore[i]) {
+						TopNjob[i] = jobid;
+						TopNscore[i] = val;
+						max_score = val > max_score ? val : max_score;
+						break;
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		CbResults tmp = new CbResults();
+		tmp.setTopJob(TopNjob);
+		tmp.setTopScore(TopNscore);
+		tmp.setUserId(userid);
+		tmp.setMax_score(max_score);
+		result.add(tmp);
+	}
+
+	
 	public void writeFile(String user, String[] topJobs, double[] topScore, double max, String path) {
 		try {
 			FileWriter fw = new FileWriter(path + "Score.txt", true);

@@ -1,6 +1,9 @@
 package recsys.algorithms.cbf;
 
 import java.io.IOException;
+import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
 
@@ -18,6 +21,9 @@ public class CB extends RecommendationAlgorithm {
 	private boolean trainMode = false; 
 	public CB(String input, String output, String taskId, boolean _trainMode) {	
 		super(input, output, taskId);
+		trainMode = _trainMode;		
+	}
+	public CB( boolean _trainMode) {			
 		trainMode = _trainMode;		
 	}
 
@@ -65,6 +71,7 @@ public class CB extends RecommendationAlgorithm {
 		JobDTO dto = null;
 		int count = 0;
 		while ((dto = dataSetReader.nextJob()) != null) {
+			if(count > 1000) break;
 			System.out.println("ItemId: " + count++);
 			String itemId = dto.getJobId() + "";
 			String content = dto.getJobName() + ". ";
@@ -100,6 +107,37 @@ public class CB extends RecommendationAlgorithm {
 
 	public void run() throws IOException, InterruptedException {
 
+		class RecTask implements Runnable{
+			
+			public RecTask(String _userid, int _topN, int theadId)
+			{
+				userId = _userid;
+				topN = _topN;
+				id =theadId;
+			}
+			private String userId;
+			private int topN;
+			private int id;
+			private boolean isRun = false;
+			@Override
+			public void run() {
+				
+				try {
+					isRun = true;
+					log.info("Thread "+ id +" for user " + userId + " start at " + new Date().toString());
+					memDocProcessor.recommend(userId, topN,id);
+					log.info("Thread " + id + " for user " + userId + " terminate at " + new Date().toString());
+					isRun = false;
+				} catch (IOException e) {
+					log.error(e);
+					log.error("Thread for user " + userId + " terminate at " + new Date().toString());
+				}
+				
+				
+			}
+			
+		}
+		
 		log.info("open Lucene writer");
 		if (memDocProcessor.open()) {
 			log.info("open Lucene writer successful");
@@ -107,11 +145,27 @@ public class CB extends RecommendationAlgorithm {
 			memDocProcessor.close();
 			log.info("Close lucene writer");
 			memDocProcessor.openReader();
+			log.info("Build term model");
 			memDocProcessor.buildTermModel();
+			log.info("Calculate df");
+			memDocProcessor.CalculateIdf(); 
 			log.info("Open lucene reader");
-			for (String i : this.memDocProcessor.getListUsers()) {				
-				memDocProcessor.recommend(i, Integer.valueOf(config.getProperty("topn")));
+			int threadid = 0;
+			int topN = Integer.valueOf(config.getProperty("topn"));
+			 Runtime runtime = Runtime.getRuntime();
+			 int numOfProcessors = runtime.availableProcessors();
+	        ExecutorService executor = Executors.newFixedThreadPool(numOfProcessors - 1);
+			for (String i : this.memDocProcessor.getListUsers()) {
+				RecTask rec = new RecTask(i, topN, threadid++);		
+				executor.submit(rec);
 			}
+			
+	        executor.shutdown();
+	        while (!executor.isTerminated()) {
+	        }
+			
+
+			
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
 			if(trainMode)

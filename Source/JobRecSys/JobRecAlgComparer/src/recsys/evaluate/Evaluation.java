@@ -330,10 +330,7 @@ public class Evaluation {
 	}
 
 	private void trainCB() {
-		CB cb = new CB();
-		cb.setInputDirectory(evaluationDir + "training\\");
-		cb.setOutputDirectory(evaluationDir + "result\\");
-		cb.readConfiguration(evaluationDir);
+		CB cb = new CB(inputDir, evaluationDir, taskId, true);		
 		try {
 			cb.run();
 		} catch (Exception ex) {

@@ -115,9 +115,9 @@ public class DocumentSimilarityTFIDF {
         Map<String, Double> f2 = getWieghts(reader, job);              
         RealVector _v1 = toRealVector(f1);
         if(arrayList != null)
-        {
+        {        	
             for(int i : arrayList)
-            {
+            {	            
             	Map<String, Double> p = getWieghts(reader, i);
             	RealVector v = toRealVector(p);
             	_v1 = _v1.add(v);
@@ -155,11 +155,19 @@ public class DocumentSimilarityTFIDF {
         writer.close();
         System.out.println("====== End INDEX ALL =====");
     }
-
+    private Map<String, Integer> docFrequencies = new HashMap<>();
+    
+    public void CalculateIdf() throws IOException
+    {
+    	for(String i : terms)
+    	{
+    		docFrequencies.put(i, reader.docFreq( new Term( CONTENT, i ) ));
+    	}
+    }
+    
     public Map<String, Double> getWieghts(IndexReader reader, int docId)
             throws IOException {
-        Terms vector = reader.getTermVector(docId, CONTENT);
-        Map<String, Integer> docFrequencies = new HashMap<>();
+        Terms vector = reader.getTermVector(docId, CONTENT);        
         Map<String, Integer> termFrequencies = new HashMap<>();
         Map<String, Double> tf_Idf_Weights = new HashMap<>();
         TermsEnum termsEnum = null;
@@ -168,18 +176,14 @@ public class DocumentSimilarityTFIDF {
         BytesRef text = null;
         while ((text = termsEnum.next()) != null) {
             String term = text.utf8ToString();
-            //int docFreq = termsEnum.docFreq();
-            docFrequencies.put(term, reader.docFreq( new Term( CONTENT, term ) ));
-
+            //docFrequencies.put(term, reader.docFreq( new Term( CONTENT, term ) ));
             docsEnum = termsEnum.docs(null, null);
             while (docsEnum.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
                 termFrequencies.put(term, docsEnum.freq());
             }
-            terms.add(term);
         }
-
         for ( String term : docFrequencies.keySet() ) {
-            int tf = termFrequencies.get(term);
+            int tf = termFrequencies.containsKey(term) ? termFrequencies.get(term) : 0;
             int df = docFrequencies.get(term);
             double idf = ( 1 + Math.log(N) - Math.log(df) );
             double w = tf * idf;
