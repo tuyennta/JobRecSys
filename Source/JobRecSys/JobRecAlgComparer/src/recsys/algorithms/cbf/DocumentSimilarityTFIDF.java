@@ -97,6 +97,7 @@ public class DocumentSimilarityTFIDF {
         double normalization = (v1.getNorm() * v2.getNorm());
         return dotProduct / normalization;
     }
+        
     
     public double getCosineSimilarityWhenIndexAllDocument( int doc1, int doc2) throws IOException {
         IndexReader reader = DirectoryReader.open(_directory);
@@ -110,9 +111,44 @@ public class DocumentSimilarityTFIDF {
         return dotProduct / normalization;
     }
     
+	protected HashMap<Integer,Map<String, Double>> jobVectors = new HashMap<Integer,Map<String, Double>>();
+	protected HashMap<Integer,Map<String, Double>> userVecotor = new HashMap<Integer,Map<String, Double>>();
+    
+    
+	
+    public double getCosineSimilarityWithUserRating(Map<String, Double> cv_v, Map<String, Double> job_vec,ArrayList<Integer> arrayList) throws IOException {                        
+        RealVector _v1 = toRealVector(cv_v);
+        if(arrayList != null)
+        {        	
+            for(int i : arrayList)
+            {	            
+            	Map<String, Double> p = getWieghts(reader, i);
+            	RealVector v = toRealVector(p);
+            	_v1 = _v1.add(v);
+            }        	
+        }
+        RealVector _v2 = toRealVector(job_vec);
+        double dotProduct = _v1.dotProduct(_v2);
+        double normalization = (_v1.getNorm() * _v2.getNorm());
+        return dotProduct / normalization;
+    }
+	
+    
+    public double getCosineSimilarityWithUserRating(RealVector cv_v, RealVector job_vec) throws IOException {                        
+                        
+        double dotProduct = cv_v.dotProduct(job_vec);
+        double normalization = (cv_v.getNorm() * job_vec.getNorm());
+        return dotProduct / normalization;
+    }
+	
     public double getCosineSimilarityWithUserRating(int cv,ArrayList<Integer> arrayList, int job) throws IOException {        
-        Map<String, Double> f1 = getWieghts(reader, cv);
-        Map<String, Double> f2 = getWieghts(reader, job);              
+        Map<String, Double> f1 = getWieghts(reader, cv);        
+        Map<String, Double> f2 = getWieghts(reader, job);
+        
+        
+//        Map<String, Double> f1 = this.jobVectors.get(job);
+//        Map<String, Double> f2 = this.userVecotor.get(cv);
+        
         RealVector _v1 = toRealVector(f1);
         if(arrayList != null)
         {        	
@@ -139,8 +175,7 @@ public class DocumentSimilarityTFIDF {
 			e.printStackTrace();
 		}        
     }
-    
-    
+        
     public void indexAllDocument(HashMap<Integer, String> allDocument) throws IOException {
         _directory = new RAMDirectory();
         Analyzer analyzer = new SimpleAnalyzer(Version.LUCENE_CURRENT);
@@ -155,13 +190,15 @@ public class DocumentSimilarityTFIDF {
         writer.close();
         System.out.println("====== End INDEX ALL =====");
     }
+    
     private Map<String, Integer> docFrequencies = new HashMap<>();
     
     public void CalculateIdf() throws IOException
     {
     	for(String i : terms)
     	{
-    		docFrequencies.put(i, reader.docFreq( new Term( CONTENT, i ) ));
+    		int val = reader.docFreq( new Term( CONTENT, i ) );
+    		docFrequencies.put(i, val);	
     	}
     }
     
@@ -222,6 +259,7 @@ public class DocumentSimilarityTFIDF {
          //}
         return vector;
     }
+  
     public RealVector toRealVector(Map<String, Double> map, Map<String, Double> world) {
         RealVector vector = new ArrayRealVector(terms.size());
         int i = 0;

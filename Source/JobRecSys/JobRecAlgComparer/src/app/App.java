@@ -55,7 +55,6 @@ public class App {
 		hybridRecommender.setOutputDirectory(output);
 		hybridRecommender.init();
 		hybridRecommender.hibridRecommend();
-
 	}
 
 	private static void contentBase(String input, String output, String taskId) {

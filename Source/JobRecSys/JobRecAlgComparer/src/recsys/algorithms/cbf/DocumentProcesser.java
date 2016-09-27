@@ -3,10 +3,14 @@ package recsys.algorithms.cbf;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.SimpleAnalyzer;
@@ -17,6 +21,7 @@ import org.apache.lucene.util.Version;
 
 public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	private static Logger log = Logger.getLogger("Author: Luan");
+
 	public DocumentProcesser() {
 		_directory = new RAMDirectory();
 
@@ -25,6 +30,15 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	private HashMap<String, ArrayList<Integer>> rating = new HashMap<String, ArrayList<Integer>>();
 	private HashMap<String, Integer> users = new HashMap<String, Integer>();
 	private HashMap<String, Integer> jobs = new HashMap<String, Integer>();
+
+	public HashMap<String, Integer> getJobs() {
+		return jobs;
+	}
+
+	public void setJobs(HashMap<String, Integer> jobs) {
+		this.jobs = jobs;
+	}
+
 	private int currentIndex = 0;
 
 	public Set<String> getListUsers() {
@@ -32,22 +46,22 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	}
 
 	public void addRating(String user, String job) {
-		if(!jobs.containsKey(job)) 
-		{
+		if (!jobs.containsKey(job)) {
 			return;
-		}			
+		}
 		if (rating.containsKey(user)) {
-			
+
 			ArrayList<Integer> userLike = rating.get(user);
 			userLike.add(jobs.get(job));
 			rating.put(user, userLike);
-		} else {			
-				ArrayList<Integer> userLike = new ArrayList<Integer>();
-				userLike.add(jobs.get(job));
-				rating.put(user, userLike);	
-			
+		} else {
+			ArrayList<Integer> userLike = new ArrayList<Integer>();
+			userLike.add(jobs.get(job));
+			rating.put(user, userLike);
+
 		}
 	}
+
 	private Analyzer analyzer = new SimpleAnalyzer(Version.LUCENE_CURRENT);
 	private IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_CURRENT, analyzer);
 	private IndexWriter writer;
@@ -70,19 +84,103 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 		}
 	}
 
-	
-	public void buildTermModel()
-	{
-		for(String i : users.keySet())
-		{
-			addTermModel(users.get(i));
+	private int countTask = 0;
+
+	public HashMap<String, CBTopNJobs> recommendResult = new HashMap<String, CBTopNJobs>();
+
+	public void fastestRecomend(int topN) {
+
+		Set<String> jobIds = jobs.keySet();
+		double size = users.keySet().size() * jobIds.size();
+		ArrayList<RealVector> userVectors = new ArrayList<RealVector>();
+		class UserTask implements Runnable {
+
+			public String userid = "";
+			public String jobId = "";
+			public RealVector userV;
+			public RealVector jobV;
+			public int threadId = 0;
+
+			public UserTask() {
+			}
+
+			@Override
+			public void run() {
+				try {
+					try {
+						double val = getCosineSimilarityWithUserRating(userV, jobV);
+						System.out.println("Thread  " + threadId + "-- Job " + userid + " and User " + jobId + " " + val
+								+ " \t" + (countTask * 100.0d / size) + " %");
+						recommendResult.get(userid).add(jobId, val);
+						countTask++;
+					} catch (IOException e) {
+
+					}
+				} catch (Exception e) {
+					log.error(e);
+				}
+			}
+
 		}
-		for(String i : jobs.keySet())
-		{
+
+		for (String j : users.keySet()) {
+			CBTopNJobs cbTopN = new CBTopNJobs(topN);
+			recommendResult.put(j, cbTopN);
+			try {
+				Map<String, Double> v_user = getWieghts(reader, users.get(j));
+
+				RealVector v = toRealVector(v_user);
+				ArrayList<Integer> arrayList = rating.get(j);
+				if (arrayList != null) {
+					for (int i : arrayList) {
+						Map<String, Double> p = getWieghts(reader, i);
+						RealVector vlike = toRealVector(p);
+						v = v.add(vlike);
+					}
+				}
+				userVectors.add(v);
+			} catch (IOException e) {
+
+			}
+		}
+		Runtime runtime = Runtime.getRuntime();
+		int numOfProcessors = runtime.availableProcessors();
+		for (String i : jobIds) {
+			try {
+				Map<String, Double> v_job = getWieghts(reader, jobs.get(i));
+				RealVector rvJob = toRealVector(v_job);
+				int vi_user = 0;
+
+				ExecutorService executor = Executors.newFixedThreadPool(numOfProcessors - 1);
+				for (String j : users.keySet()) {
+					UserTask rec = new UserTask();
+					rec.jobId = i;
+					rec.userid = j;
+					rec.jobV = rvJob;
+					rec.threadId = vi_user;
+					rec.userV = userVectors.get(vi_user++);
+					executor.submit(rec);
+				}
+				executor.shutdown();
+				while (!executor.isTerminated()) {
+				}
+				vi_user = 0;
+			} catch (IOException e) {
+
+			}
+		}
+
+	}
+
+	public void buildTermCopus() {
+		for (String i : users.keySet()) {
+			addTermModel(users.get(i));			
+		}
+		for (String i : jobs.keySet()) {
 			addTermModel(jobs.get(i));
 		}
 	}
-	
+
 	public void addJob(String jobId, String content) {
 
 		try {
@@ -111,175 +209,24 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 
 	}
 
-	private ArrayList<CbResults> result = new ArrayList<CbResults>();
-
-	public void recommend(String path) throws IOException {
-
-		double[] TopNscore = new double[jobs.size()];
-		String[] TopNjob = new String[jobs.size()];
-		double max_score = 0.0d;
-		for (int i = 0; i < jobs.size(); i++) {
-			TopNjob[i] = "";
-			TopNscore[i] = 0;
-		}
-
-		for (String userid : users.keySet()) {
-			int userDoc = users.get(userid);
-			int i = 0;
-			log.info("Recommend for user " + userid);
-			for (String jobid : jobs.keySet()) {
-				int itemDoc = jobs.get(jobid);
-				try {
-					double val = getCosineSimilarityWithUserRating(userDoc, rating.get(userid), itemDoc);
-					TopNjob[i] = jobid;
-					TopNscore[i] = val;
-					max_score = val > max_score ? val : max_score;
-					System.out.println("Cos between " + userid + " and " + jobid + " is " + val);
-					i++;
-				} catch (IOException e) {
-					log.error(e);
-				}
-			}
-			log.info("write file data " + userid + " Job count "  + TopNjob.length);
-			writeFile(userid, TopNjob, TopNscore, max_score, path);
-			log.info("write file data is done");
-		}
-	}
-
-	public void recommend(String userid, int topN) throws IOException {
-
-		System.out.println("Reccomend for userid " + userid);
-		double[] TopNscore = new double[topN];
-		String[] TopNjob = new String[topN];
-		double max_score = 0.0d;
-		for (int i = 0; i < topN; i++) {
-			TopNjob[i] = "";
-			TopNscore[i] = 0;
-		}
-
-		int userDoc = users.get(userid);
-		for (String jobid : jobs.keySet()) {
-			int itemDoc = jobs.get(jobid);
-			try {
-				double val = getCosineSimilarityWithUserRating(userDoc, rating.get(userid), itemDoc);
-				System.out.println("Similarity between " + userDoc + " and " + jobid + " is:" + val);
-				for (int i = 0; i < topN; i++) {
-					if (val > TopNscore[i]) {
-						TopNjob[i] = jobid;
-						TopNscore[i] = val;
-						max_score = val > max_score ? val : max_score;
-						break;
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		CbResults tmp = new CbResults();
-		tmp.setTopJob(TopNjob);
-		tmp.setTopScore(TopNscore);
-		tmp.setUserId(userid);
-		tmp.setMax_score(max_score);
-		result.add(tmp);
-	}
-
-	
-	public void recommend(String userid, int topN, int threadid) throws IOException {
-
-		System.out.println("Thread "+threadid+" Reccomend for userid " + userid);
-		double[] TopNscore = new double[topN];
-		String[] TopNjob = new String[topN];
-		double max_score = 0.0d;
-		for (int i = 0; i < topN; i++) {
-			TopNjob[i] = "";
-			TopNscore[i] = 0;
-		}
-
-		int userDoc = users.get(userid);
-		for (String jobid : jobs.keySet()) {
-			int itemDoc = jobs.get(jobid);
-			try {
-				double val = getCosineSimilarityWithUserRating(userDoc, rating.get(userid), itemDoc);
-				System.out.println("Thread "+threadid+" Similarity between " + userDoc + " and " + jobid + " is:" + val);
-				for (int i = 0; i < topN; i++) {
-					if (val > TopNscore[i]) {
-						TopNjob[i] = jobid;
-						TopNscore[i] = val;
-						max_score = val > max_score ? val : max_score;
-						break;
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		CbResults tmp = new CbResults();
-		tmp.setTopJob(TopNjob);
-		tmp.setTopScore(TopNscore);
-		tmp.setUserId(userid);
-		tmp.setMax_score(max_score);
-		result.add(tmp);
-	}
-
-	
-	public void writeFile(String user, String[] topJobs, double[] topScore, double max, String path) {
-		try {
-			FileWriter fw = new FileWriter(path + "Score.txt", true);
-			log.info("open file to write: " + path + "Score.txt");
-			System.out.println("Start writing result!");
-			for (int i = 0; i < topJobs.length; i++) {
-
-				String _rs = user + "\t" + topJobs[i] + "\t"
-						+ (1.0d + (topScore[i] * 4.0d / max));
-				System.out.println(_rs);
-				fw.append(_rs + "\r\n");
-			}
-			log.info("close file: " + path + "Score.txt");
-			fw.close();
-		} catch (Exception e) {
-			log.error(e);
-		}
-
-	}
-
-	public void writeFile(String path) {
+	public void writeFile(String path, HashMap<String, CBTopNJobs> rss) {
 		try {
 			FileWriter fw = new FileWriter(path + "Score.txt", true);
 			System.out.println("Start writing result!");
-			for (CbResults rs : result) {
-				int topN = rs.getTopJob().length;
-				String[] TopNjob = rs.getTopJob();
-				double[] TopNscore = rs.getTopScore();
-				for (int i = 0; i < topN; i++) {
-					String _rs = rs.getUserId() + "\t" + TopNjob[i] + "\t"
-							+ (1.0d + (TopNscore[i] * 4.0d / rs.getMax_score()));
-					System.out.println(_rs);
-					fw.append(_rs + "\r\n");
+			for (String i : rss.keySet()) {
+				double max = rss.get(i).max_score;
+				int topN = rss.get(i).topN;
+				double[] score = rss.get(i).TopNscore;
+				String[] job = rss.get(i).TopNjob;
+				for (int k = 0; k < topN; k++) {
+					fw.append(i + "\t" + job[k] + "\t" + (1.0d + ((score[k] / max) * 4.0d)) + "\r\n");
 				}
+
 			}
 			fw.close();
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-
 	}
 
-	public void calculateSimilarity() throws IOException {
-		FileWriter fw = new FileWriter("rs.txt");
-		for (String userId : users.keySet()) {
-			int userDoc = users.get(userId);
-			for (String jobid : jobs.keySet()) {
-				int itemDoc = jobs.get(jobid);
-				try {
-					double val = getCosineSimilarityWithUserRating(userDoc, rating.get(userId), itemDoc);
-					System.out.println("UserId: " + userId + " , JobId " + jobid + " = " + (1.0d + val * 4.0d));
-					fw.write(userId + "\t" + jobid + "\t" + val + "\r\n");
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-
-			fw.close();
-		}
-	}
 }
