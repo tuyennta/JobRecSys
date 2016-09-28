@@ -32,7 +32,7 @@ public class App {
 			contentBase(args[2], args[3], args[4]);
 			break;
 		case "hb":
-			hybrid(args[2], args[3]);
+			hybrid(args[2], args[3], args[4]);
 			break;
 		default:
 			break;
@@ -49,12 +49,10 @@ public class App {
 		cf.recommend();
 	}
 
-	private static void hybrid(String input, String output) {
-		HybirdRecommeder hybridRecommender = new HybirdRecommeder();
-		hybridRecommender.setInputDirectory(input);
-		hybridRecommender.setOutputDirectory(output);
+	private static void hybrid(String input, String output,String taskId) {
+		HybirdRecommeder hybridRecommender = new HybirdRecommeder(input, output, taskId);
 		hybridRecommender.init();
-		
+		hybridRecommender.run();
 	}
 
 	private static void contentBase(String input, String output, String taskId) {

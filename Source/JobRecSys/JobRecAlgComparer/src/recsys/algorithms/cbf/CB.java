@@ -3,10 +3,13 @@ package recsys.algorithms.cbf;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.log4j.Logger;
+import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 
 import dto.CvDTO;
 import dto.JobDTO;
@@ -107,6 +110,31 @@ public class CB extends RecommendationAlgorithm {
 						
 	}
 
+	public HashMap<String, CbRecommededList> run(HashMap<String, List<RecommendedItem>> cf) throws IOException, InterruptedException {		
+		HashMap<String, CbRecommededList> rs = null;
+		log.info("open Lucene writer");
+		if (memDocProcessor.open()) {
+			log.info("open Lucene writer successful");
+			indexData();
+			memDocProcessor.close();
+			log.info("Close lucene writer");
+			log.info("Open lucene reader");
+			memDocProcessor.openReader();
+			log.info("Build term model");
+			memDocProcessor.buildTermCopus();
+			log.info("Calculate df");
+			memDocProcessor.CalculateIdf(); 							
+			rs = memDocProcessor.getRecommendScoreForSpecificJobs(cf);		
+			System.out.println("Get data from cb ok");
+			memDocProcessor.closeReader();
+			System.out.println("Close reader");
+			log.info("Close lucene reader");	
+			log.info("Finish CB");
+		}
+		System.out.println("Return data size" + rs.size());
+		return rs;
+	}
+		
 	public void run() throws IOException, InterruptedException {
 		
 		log.info("open Lucene writer");
@@ -122,20 +150,19 @@ public class CB extends RecommendationAlgorithm {
 			log.info("Calculate df");
 			memDocProcessor.CalculateIdf(); 	
 			int topN = Integer.valueOf(config.getProperty("topn"));
-			memDocProcessor.fastestRecomend(topN);				        	        	
+			memDocProcessor.recommendForTopN(topN);				        	        	
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
 			if(trainMode)
 			{
-				memDocProcessor.writeFile(outputDirectory + "result\\", memDocProcessor.recommendResult);
+				memDocProcessor.writeFile(outputDirectory + "result\\", memDocProcessor.topNRecommendResult);
 			}
 			else
 			{
-				memDocProcessor.writeFile(outputDirectory , memDocProcessor.recommendResult);					
+				memDocProcessor.writeFile(outputDirectory , memDocProcessor.topNRecommendResult);					
 			}			
 			updateDB("update task set Status = 'Done' where TaskId = " + taskId);
 			log.info("Finish CB");
 		}
-
 	}
 }

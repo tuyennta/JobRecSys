@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -18,6 +19,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
+import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 
 public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	private static Logger log = Logger.getLogger("Author: Luan");
@@ -86,9 +88,11 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 
 	private int countTask = 0;
 
-	public HashMap<String, CBTopNJobs> recommendResult = new HashMap<String, CBTopNJobs>();
+	public HashMap<String, CBTopNJobs> topNRecommendResult = new HashMap<String, CBTopNJobs>();
 
-	public void fastestRecomend(int topN) {
+	public HashMap<String, CbRecommededList> recommendResult = new HashMap<String, CbRecommededList>();
+	
+	public void recommendForTopN(int topN) {
 
 		Set<String> jobIds = jobs.keySet();
 		double size = users.keySet().size() * jobIds.size();
@@ -111,7 +115,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 						double val = getCosineSimilarityWithUserRating(userV, jobV);
 						System.out.println("Thread  " + threadId + "-- Job " + userid + " and User " + jobId + " " + val
 								+ " \t" + (countTask * 100.0d / size) + " %");
-						recommendResult.get(userid).add(jobId, val);
+						topNRecommendResult.get(userid).add(jobId, val);
 						countTask++;
 					} catch (IOException e) {
 
@@ -125,7 +129,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 
 		for (String j : users.keySet()) {
 			CBTopNJobs cbTopN = new CBTopNJobs(topN);
-			recommendResult.put(j, cbTopN);
+			topNRecommendResult.put(j, cbTopN);
 			try {
 				Map<String, Double> v_user = getWieghts(reader, users.get(j));
 
@@ -169,6 +173,103 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 
 			}
 		}
+
+	}
+	
+	
+	public HashMap<String, CbRecommededList> getRecommendScoreForSpecificJobs(HashMap<String,List<RecommendedItem>> cfResult) {
+
+		Set<String> jobKeySet = jobs.keySet();
+		double size = users.keySet().size() * jobKeySet.size();
+		ArrayList<RealVector> userRealVectors = new ArrayList<RealVector>();
+		
+		class UserTaskRec implements Runnable {
+
+			public String userid = "";
+			public String jobId = "";
+			public RealVector userV;
+			public RealVector jobV;			
+
+			public UserTaskRec() {
+			}
+
+			@Override
+			public void run() {
+				try {
+					try {
+						double val = getCosineSimilarityWithUserRating(userV, jobV);
+						CbRecommededList rs = recommendResult.get(userid);
+						 rs.update(jobId, val);
+						 recommendResult.put(userid, rs);
+						countTask++;
+					} catch (IOException e) {
+
+					}
+				} catch (Exception e) {
+					log.error(e);
+				}
+			}
+
+		}
+
+		for (String j : users.keySet()) {
+			CbRecommededList cbRec = new CbRecommededList();
+			List<RecommendedItem> rec = cfResult.get(j);
+			if(rec != null)
+			{
+				for(RecommendedItem i : rec)
+				{
+					cbRec.add(i.getItemID() + "", i.getValue());
+				}
+			}
+			recommendResult.put(j, cbRec);
+			try {
+				Map<String, Double> v_user = getWieghts(reader, users.get(j));
+
+				RealVector v = toRealVector(v_user);
+				ArrayList<Integer> arrayList = rating.get(j);
+				if (arrayList != null) {
+					for (int i : arrayList) {
+						Map<String, Double> p = getWieghts(reader, i);
+						RealVector vlike = toRealVector(p);
+						v = v.add(vlike);
+					}
+				}
+				userRealVectors.add(v);
+			} catch (IOException e) {
+
+			}
+		}
+		Runtime runtime = Runtime.getRuntime();
+		int numOfProcessors = runtime.availableProcessors();
+		for (String i : jobKeySet) {
+			
+			try {
+				Map<String, Double> v_job = getWieghts(reader, jobs.get(i));
+				RealVector rvJob = toRealVector(v_job);
+				int vi_user = 0;
+
+				ExecutorService executor = Executors.newFixedThreadPool(numOfProcessors - 1);
+				for (String j : users.keySet()) {
+					UserTaskRec rec = new UserTaskRec();
+					rec.jobId = i;
+					rec.userid = j;
+					rec.jobV = rvJob;					
+					rec.userV = userRealVectors.get(vi_user++);
+					executor.submit(rec);
+				}
+				executor.shutdown();
+				while (!executor.isTerminated()) {
+				}
+				vi_user = 0;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Matching for jobid " + i + " \t" + (countTask * 100.0d / size) + " %");
+		}
+		System.out.println("done cb " + recommendResult.size());
+		 recommendResult.get(1);
+		return  this.recommendResult;
 
 	}
 
@@ -228,5 +329,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 			// TODO: handle exception
 		}
 	}
+	
+	
 
 }

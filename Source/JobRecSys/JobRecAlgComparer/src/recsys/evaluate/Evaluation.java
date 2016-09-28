@@ -322,10 +322,10 @@ public class Evaluation {
 	}
 
 	private void trainHB() {
-		HybirdRecommeder hybridRecommender = new HybirdRecommeder();
-		hybridRecommender.setInputDirectory(evaluationDir + "training\\");
-		hybridRecommender.setOutputDirectory(evaluationDir + "result\\");
-		hybridRecommender.init();
+		//HybirdRecommeder hybridRecommender = new HybirdRecommeder();
+		//hybridRecommender.setInputDirectory(evaluationDir + "training\\");
+		//hybridRecommender.setOutputDirectory(evaluationDir + "result\\");
+		//hybridRecommender.init();
 		//hybridRecommender.hibridRecommend();
 	}
 

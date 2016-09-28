@@ -52,6 +52,14 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		listUserIds = new CollaborativeFilteringDataPreparer(this.inputDirectory).getListUserId();
 	}
 
+	public List<Integer> getListUserIds() {
+		return listUserIds;
+	}
+
+	public void setListUserIds(List<Integer> listUserIds) {
+		this.listUserIds = listUserIds;
+	}
+
 	public CollaborativeFiltering(String evaluationDir, Properties config, String taskId) {
 
 		/* prepare configuration */
@@ -325,7 +333,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 				@Override
 				public double rescore(long userd , double originalScore) {
 					// TODO Auto-generated method stub
-					return 0;
+					return originalScore;
 				}
 				
 				@Override

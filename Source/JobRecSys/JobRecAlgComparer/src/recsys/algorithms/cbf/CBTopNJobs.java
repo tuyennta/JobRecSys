@@ -3,7 +3,7 @@ package recsys.algorithms.cbf;
 public class CBTopNJobs {
 
 	public int topN;
-	double[] TopNscore;
+	public double[] TopNscore;
 	public String[] TopNjob;
 	public double max_score = 0.0d;
 	
