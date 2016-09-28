@@ -40,8 +40,9 @@ public class HybirdRecommeder extends RecommendationAlgorithm{
 			int topN = Integer.parseInt(this.config.getProperty("topn"));
 			FileWriter fw = new FileWriter(path + "Score.txt", true);
 			System.out.println("Start writing result!");
+			double alpha = Double.parseDouble(config.getProperty("hb.alpha")); 
 			for (String i : rss.keySet()) {			
-				double alpha = Double.parseDouble(config.getProperty("hb.alpha")); 
+				
 				ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
 				ArrayList<String> jobs= rss.get(i).getJobsArray();
 				CBTopNJobs topNJobs = new CBTopNJobs(topN);
