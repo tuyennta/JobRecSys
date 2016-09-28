@@ -19,6 +19,14 @@ public abstract class RecommendationAlgorithm {
 	
 	protected static Logger log = Logger.getLogger(RecommendationAlgorithm.class.getName());
 
+	public String getTaskId() {
+		return taskId;
+	}
+
+	public void setTaskId(String taskId) {
+		this.taskId = taskId;
+	}
+
 	public RecommendationAlgorithm() {
 		config = new Properties();
 	}

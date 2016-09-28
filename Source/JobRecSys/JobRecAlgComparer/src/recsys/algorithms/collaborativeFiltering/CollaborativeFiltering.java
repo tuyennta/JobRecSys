@@ -103,13 +103,13 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		}
 	}
 
-	public void recommend() {		
+	public void recommend() {
 		int startIndex = 0;
-		if(isEstimate){
+		if (isEstimate) {
 			startIndex = 1;
-		}		
+		}
 		switch (config.getProperty("cf.type")) {
-		
+
 		case "UserBased":
 			for (int i = startIndex; i < listUserIds.size(); i++) {
 				UserBased(listUserIds.get(i));
@@ -128,6 +128,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 
 	/**
 	 * Estimate execution time to recommend for all users
+	 * 
 	 * @return
 	 */
 	public long estimateRecommendationTime(long initModelTime) {
@@ -150,8 +151,9 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			break;
 		}
 		long totalTime = recTime * listUserIds.size() + initModelTime;
-//		updateDB("update task set Status = '"+ totalTime + " remaining' where TaskId = " + taskId);
-		//total time to execute all recommendation
+		// updateDB("update task set Status = '"+ totalTime + " remaining' where
+		// TaskId = " + taskId);
+		// total time to execute all recommendation
 		return totalTime;
 	}
 
@@ -290,5 +292,50 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			log.error(e);
 			e.printStackTrace();
 		}
+	}
+
+	public List<RecommendedItem> getListRecommendItemUserBased(int userId, int numberOfItems) {
+		List<RecommendedItem> cfResult = null;
+		// initialize recommender
+		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
+		try {
+			cfResult = recommender.recommend(userId, numberOfItems, new IDRescorer() {
+				@Override
+				public double rescore(long userid, double originalSocre) {
+					return originalSocre;
+				}
+
+				@Override
+				public boolean isFiltered(long itemId) {
+					return false;
+				}
+			});
+		} catch (TasteException e) {
+
+		}
+		return cfResult;
+	}
+
+	public List<RecommendedItem> getListRecommendItemItemBased(int userId, int numberOfItem) {
+		List<RecommendedItem> ibResult = null;
+		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
+		try {
+			ibResult = recommender.recommend(userId, numberOfItem, new IDRescorer() {
+				
+				@Override
+				public double rescore(long userd , double originalScore) {
+					// TODO Auto-generated method stub
+					return 0;
+				}
+				
+				@Override
+				public boolean isFiltered(long arg0) {
+					// TODO Auto-generated method stub
+					return false;
+				}
+			});
+		} catch (TasteException e) {
+		}
+		return ibResult;
 	}
 }

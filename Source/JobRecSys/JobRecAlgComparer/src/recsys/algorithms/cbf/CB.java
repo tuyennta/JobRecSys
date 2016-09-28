@@ -47,15 +47,17 @@ public class CB extends RecommendationAlgorithm {
 		}
 	}
 		
-	private void createDataModel() {
+	private void indexData() {
 		log.info("create dataset reader");
 		dataSetReader = new DataSetReader(this.inputDirectory);
 		log.info("read cv from dataset");
 		dataSetReader.open(DataSetType.Cv);
 		CvDTO cvdto = null;
-		System.out.println("Build user profile");
+		System.out.println("Index user resume");
+		int count = 0;
 		while ((cvdto = dataSetReader.nextCv()) != null) {
 			String itemId = cvdto.getAccountId() + "";
+			System.out.println("Index document : " + count++);
 			String content = cvdto.getAddress() + ". ";
 			content += cvdto.getCategory() + ". ";
 			content += cvdto.getEducation() + ". ";
@@ -70,10 +72,10 @@ public class CB extends RecommendationAlgorithm {
 		dataSetReader.open(DataSetType.Job);
 		log.info("Building item profile");		
 		JobDTO dto = null;
-		int count = 0;
+		count = 0;
 		while ((dto = dataSetReader.nextJob()) != null) {
 			//if(count > 1000) break;
-			System.out.println("ItemId: " + count++);
+			System.out.println("Index document : " + count++);
 			String itemId = dto.getJobId() + "";
 			String content = dto.getJobName() + ". ";
 			content += dto.getRequirement() + ". ";
@@ -110,7 +112,7 @@ public class CB extends RecommendationAlgorithm {
 		log.info("open Lucene writer");
 		if (memDocProcessor.open()) {
 			log.info("open Lucene writer successful");
-			createDataModel();
+			indexData();
 			memDocProcessor.close();
 			log.info("Close lucene writer");
 			log.info("Open lucene reader");

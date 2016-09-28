@@ -326,7 +326,7 @@ public class Evaluation {
 		hybridRecommender.setInputDirectory(evaluationDir + "training\\");
 		hybridRecommender.setOutputDirectory(evaluationDir + "result\\");
 		hybridRecommender.init();
-		hybridRecommender.hibridRecommend();
+		//hybridRecommender.hibridRecommend();
 	}
 
 	private void trainCB() {
