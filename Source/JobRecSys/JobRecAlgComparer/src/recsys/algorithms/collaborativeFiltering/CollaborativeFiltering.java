@@ -40,10 +40,10 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	List<Integer> listUserIds;
 	boolean isEstimate = false;
 
-	public CollaborativeFiltering(String inputDir, String outputDir, String taskId) {
+	public CollaborativeFiltering(String inputDir, String outputDir, String taskId, long startTime) {
 
 		/* prepare configuration */
-		super(inputDir, outputDir, taskId);
+		super(inputDir, outputDir, taskId, startTime);
 
 		/* learn model */
 		initModel();
@@ -60,10 +60,10 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		this.listUserIds = listUserIds;
 	}
 
-	public CollaborativeFiltering(String evaluationDir, Properties config, String taskId) {
+	public CollaborativeFiltering(String evaluationDir, Properties config, String taskId, long startTime) {
 
 		/* prepare configuration */
-		super(evaluationDir, config, taskId);
+		super(evaluationDir, config, taskId, startTime);
 
 		/* learn model */
 		initModel();
@@ -131,7 +131,9 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		default:
 			break;
 		}
-		updateDB("update task set Status = 'Done' where TaskId = " + taskId);
+		if (!isRunningEvaluation)
+			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
+					+ "', Status = 'Done' where TaskId = " + taskId);
 	}
 
 	/**
@@ -329,13 +331,13 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
 		try {
 			ibResult = recommender.recommend(userId, numberOfItem, new IDRescorer() {
-				
+
 				@Override
-				public double rescore(long userd , double originalScore) {
+				public double rescore(long userd, double originalScore) {
 					// TODO Auto-generated method stub
 					return originalScore;
 				}
-				
+
 				@Override
 				public boolean isFiltered(long arg0) {
 					// TODO Auto-generated method stub

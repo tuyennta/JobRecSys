@@ -8,7 +8,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 
@@ -63,12 +62,8 @@ public class CollaborativeFilteringDataPreparer extends DataPreparer {
 		else
 			testingSize = (int) (proportionOfTest * fullSize / 100);
 
-		for (int i = 0; i < testingSize; i++) {			
-			ScoreDTO dto = getAnyScore(fullSize, scoreDataSet);
-			while (scoreTestingSet.contains(dto)) {
-				dto = getAnyScore(fullSize, scoreDataSet);
-			}
-			scoreTestingSet.add(dto);
+		for (int i = 0; i < testingSize; i++) {						
+			scoreTestingSet.add(scoreDataSet.get(i));
 		}
 		if (scoreDataSet.removeAll(scoreTestingSet)) {
 			scoreTrainingSet = scoreDataSet;
@@ -76,11 +71,6 @@ public class CollaborativeFilteringDataPreparer extends DataPreparer {
 
 		writeScore(outputDir + "training\\", "Score.txt", scoreTrainingSet);
 		writeScore(outputDir + "testing\\", "Score.txt", scoreTestingSet);
-	}
-	
-	private ScoreDTO getAnyScore(int maxRange, List<ScoreDTO> fullSet) {
-		int index = new Random().nextInt(maxRange);
-		return fullSet.get(index);
 	}
 	
 	/**
@@ -96,21 +86,20 @@ public class CollaborativeFilteringDataPreparer extends DataPreparer {
 		List<ScoreDTO> scoreDataSet = getAllScores();
 		List<ScoreDTO> scoreTestingSet = new ArrayList<ScoreDTO>();
 		List<ScoreDTO> scoreTrainingSet = new ArrayList<ScoreDTO>();
-		
+		if(totalFold == 1){
+			writeScore(evalDir + "training\\", "Score.txt", scoreDataSet);
+			writeScore(evalDir + "testing\\", "Score.txt", scoreDataSet);
+			return;
+		}
 		int foldSize = scoreDataSet.size()/totalFold;
 		int startIndex = foldIndex*foldSize;
 		int endIndex = startIndex + foldSize;
-		for (int i = startIndex; i < endIndex; i++) {			
-			ScoreDTO dto = getAnyScore(scoreDataSet.size(), scoreDataSet);
-			while (scoreTestingSet.contains(dto)) {
-				dto = getAnyScore(scoreDataSet.size(), scoreDataSet);
-			}
-			scoreTestingSet.add(dto);
+		for (int i = startIndex; i < endIndex; i++) {								
+			scoreTestingSet.add(scoreDataSet.get(i));
 		}
 		if (scoreDataSet.removeAll(scoreTestingSet)) {
 			scoreTrainingSet = scoreDataSet;
-		}
-		
+		}		
 		writeScore(evalDir + "training\\", "Score.txt", scoreTrainingSet);
 		writeScore(evalDir + "testing\\", "Score.txt", scoreTestingSet);
 	}

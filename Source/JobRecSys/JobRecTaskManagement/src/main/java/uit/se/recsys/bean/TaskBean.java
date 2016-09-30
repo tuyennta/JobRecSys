@@ -35,6 +35,16 @@ public class TaskBean {
     Properties config;
     int testSize;
     int testFold;
+    String executionTime;
+    
+
+    public String getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(String executionTime) {
+        this.executionTime = executionTime;
+    }
 
     public int getTaskId() {
 	return taskId;

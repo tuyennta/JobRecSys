@@ -30,7 +30,7 @@ public class TaskDAO {
     Connection connection = null;
 
     public boolean addTask(TaskBean task) {
-	String sql = "insert into task (UserId, TaskName, TimeCreate, Status, Algorithm, Dataset, TaskType, EvaluationType, EvaluationParam) values (?,?,?,?,?,?,?,?,?)";
+	String sql = "insert into task (UserId, TaskName, TimeCreate, Status, Algorithm, Dataset, TaskType, EvaluationType, EvaluationParam, ExecutionTime) values (?,?,?,?,?,?,?,?,?,?)";
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement statement = connection.prepareStatement(sql);
@@ -40,9 +40,10 @@ public class TaskDAO {
 	    statement.setString(4, task.getStatus());
 	    statement.setString(5, task.getAlgorithm());
 	    statement.setString(6, task.getDataset());
-	    statement.setString(7, task.getType());
+	    statement.setString(7, task.getType());	    
 	    statement.setString(8, task.getEvaluationType());
 	    statement.setInt(9, task.getEvaluationParam());
+	    statement.setString(10, "0");
 	    if (statement.executeUpdate() > 0) {
 		statement.close();
 		connection.close();
@@ -68,6 +69,7 @@ public class TaskDAO {
 		task.setAlgorithm(rs.getString("Algorithm"));
 		task.setDataset(rs.getString("Dataset"));
 		task.setStatus(rs.getString("Status"));
+		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
@@ -112,6 +114,7 @@ public class TaskDAO {
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
+		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
 		task.setEvaluationParam(Integer
 				.parseInt(rs.getString("EvaluationParam")));
 		task.setMetrics(getMetricOfTask(task.getTaskId()));
@@ -190,6 +193,7 @@ public class TaskDAO {
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
+		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
 		task.setConfig(readConfig(task));
 		task.setMetrics(getMetricOfTask(task.getTaskId()));
 	    }
@@ -200,6 +204,28 @@ public class TaskDAO {
 	    e.printStackTrace();
 	}
 	return task;
+    }
+    
+    private String convertExecutionTime(String time){
+	long _time = Long.valueOf(time);
+	int min = 0;
+	int sec = 0;
+	int hour = 0;
+	String converted = "0 giây";
+	if(_time <= 60){
+	    converted = _time + " giây";
+	}else{
+	    min = (int)_time / 60;
+	    sec = (int)_time % 60;
+	    if(min <= 60){
+		converted = min + " phút, " + sec + " giây"; 
+	    }else{
+		hour = min / 60;
+		min %= 60;
+		converted = hour + " giờ, " + min + " phút, " + sec + " giây";
+	    }
+	}
+	return converted;
     }
 
     public int generateId() {

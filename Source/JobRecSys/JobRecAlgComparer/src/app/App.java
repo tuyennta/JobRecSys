@@ -11,53 +11,54 @@ public class App {
 	public static Logger log = Logger.getLogger(App.class.getName());
 
 	public static void main(String[] args) {
+		long startTime = System.currentTimeMillis();
 		switch (args[0]) {
 		case "rec":
-			recommend(args);
+			recommend(args, startTime);
 			break;
 		case "eval":
-			evaluate(args);
+			evaluate(args, startTime);
 			break;
 		default:
 			break;
 		}
 	}
 
-	private static void recommend(String[] args) {
+	private static void recommend(String[] args, long startTime) {
 		switch (args[1]) {
 		case "cf":
-			collaborativeFiltering(args[2], args[3], args[4]);
+			collaborativeFiltering(args[2], args[3], args[4], startTime);
 			break;
 		case "cb":
-			contentBase(args[2], args[3], args[4]);
+			contentBase(args[2], args[3], args[4], startTime);
 			break;
 		case "hb":
-			hybrid(args[2], args[3], args[4]);
+			hybrid(args[2], args[3], args[4], startTime);
 			break;
 		default:
 			break;
 		}
 	}
 
-	private static void evaluate(String[] args) {
-		Evaluation eval = new Evaluation(args[2], Integer.valueOf(args[3]), args[1], args[4], args[5], args[6]);
+	private static void evaluate(String[] args, long startTime) {
+		Evaluation eval = new Evaluation(args[2], Integer.valueOf(args[3]), args[1], args[4], args[5], args[6], startTime);
 		eval.evaluate();
 	}
 
-	private static void collaborativeFiltering(String input, String output, String taskId) {
-		CollaborativeFiltering cf = new CollaborativeFiltering(input, output, taskId);
+	private static void collaborativeFiltering(String input, String output, String taskId, long startTime) {
+		CollaborativeFiltering cf = new CollaborativeFiltering(input, output, taskId, startTime);
 		cf.recommend();
 	}
 
-	private static void hybrid(String input, String output,String taskId) {
-		HybirdRecommeder hybridRecommender = new HybirdRecommeder(input, output, taskId);
+	private static void hybrid(String input, String output,String taskId, long startTime) {
+		HybirdRecommeder hybridRecommender = new HybirdRecommeder(input, output, taskId, startTime);
 		hybridRecommender.init();
 		hybridRecommender.run();
 	}
 
-	private static void contentBase(String input, String output, String taskId) {
+	private static void contentBase(String input, String output, String taskId, long startTime) {
 
-		CB cb = new CB(input, output, taskId, false);
+		CB cb = new CB(input, output, taskId, false, startTime);
 		try {
 			cb.run();
 		} catch (Exception ex) {

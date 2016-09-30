@@ -81,7 +81,7 @@ public class HomeController {
 	}
 
 	/* Set task info and save it */
-	task.setStatus("running");
+	task.setStatus("Running");
 	task.setType("rec");
 	task.setTimeCreate(new Timestamp(new Date().getTime()));
 	task.setTaskName(task.getAlgorithm() + "-" + task.getDataset() + "-" + task.getTimeCreate().getHours() + "-" + task.getTimeCreate().getMinutes());

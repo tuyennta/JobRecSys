@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import org.apache.log4j.Logger;
 
+import recsys.algorithms.RecommendationAlgorithm;
 import recsys.algorithms.cbf.CB;
 import recsys.algorithms.collaborativeFiltering.CollaborativeFiltering;
 import recsys.algorithms.hybird.HybirdRecommeder;
 import recsys.datapreparer.CollaborativeFilteringDataPreparer;
-import recsys.datapreparer.ContentBasedDataPreparer;
 import uit.se.evaluation.dtos.ScoreDTO;
 import uit.se.evaluation.metrics.AveragePrecision;
 import uit.se.evaluation.metrics.FMeasure;
@@ -39,14 +40,18 @@ public class Evaluation {
 	String taskId;
 	Properties config;
 	int truthRank = 3;
+	long startTime;
+	boolean isEstimate = false;
+	static Logger log = Logger.getLogger(Evaluation.class.getName());
 
-	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId) {
+	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId, long startTime) {
 		this.algorithm = algorithm;
 		this.evaluationParam = evalParam;
 		this.evaluationType = evalType;
 		this.inputDir = input;
 		this.evaluationDir = evalDir;
 		this.taskId = taskId;
+		this.startTime = startTime;
 		this.config = new Properties();
 		try {
 			config.load(new FileInputStream(evalDir + "config.properties"));
@@ -54,6 +59,7 @@ public class Evaluation {
 			truthRank = Integer.valueOf(config.getProperty("relevant.score"));
 		} catch (IOException e) {
 			e.printStackTrace();
+			log.error(e);
 		}
 	}
 
@@ -63,15 +69,11 @@ public class Evaluation {
 		 */
 		CollaborativeFilteringDataPreparer dataPreparer = new CollaborativeFilteringDataPreparer(inputDir);
 		dataPreparer.splitDataSet(evaluationParam, evaluationDir);
-		if (!algorithm.equals("cf")) {
-			ContentBasedDataPreparer cbDataPreparer = new ContentBasedDataPreparer(inputDir);
-			cbDataPreparer.splitDataSet(evaluationDir, evaluationParam);
-		}
 
 		/**
 		 * Second step: call Algorithm execute on training data set
 		 */
-		trainAlgorithm();
+		trainAlgorithm(null);
 
 		/**
 		 * Third step: convert result to boolean type
@@ -97,16 +99,12 @@ public class Evaluation {
 		 * First step: preparing data, split training and testing data set
 		 */
 		CollaborativeFilteringDataPreparer dataPreparer = new CollaborativeFilteringDataPreparer(inputDir);
-		dataPreparer.copyFileTo(inputDir + "Score.txt", evaluationDir + "training\\Score.txt");
-		if (!algorithm.equals("cf")) {
-			ContentBasedDataPreparer cbDataPreparer = new ContentBasedDataPreparer(inputDir);
-			cbDataPreparer.copyFileTo(inputDir, evaluationDir + "training\\");
-		}
+		dataPreparer.copyFileTo(inputDir, evaluationDir + "training\\");
 
 		/**
 		 * Second step: call Algorithm execute on training data set
 		 */
-		trainAlgorithm();
+		trainAlgorithm(null);
 
 		/**
 		 * Third step: convert result to boolean type
@@ -131,20 +129,18 @@ public class Evaluation {
 
 		CollaborativeFilteringDataPreparer dataPreparer = new CollaborativeFilteringDataPreparer(inputDir);
 		HashMap<String, Double> evaluationResult = null;
+
 		for (int i = 0; i < evaluationParam; i++) {
 			/**
 			 * First step: preparing data, split training and testing data set
 			 */
+			
 			dataPreparer.splitDataSet(i, evaluationParam, inputDir, evaluationDir);
-			if (!algorithm.equals("cf")) {
-				ContentBasedDataPreparer cbDataPreparer = new ContentBasedDataPreparer(inputDir);
-				cbDataPreparer.splitDataSet(evaluationDir, evaluationParam);
-			}
 
 			/**
 			 * Second step: call Algorithm execute on training data set
 			 */
-			trainAlgorithm();
+			trainAlgorithm(null);
 
 			/**
 			 * Third step: convert result to boolean type
@@ -167,6 +163,56 @@ public class Evaluation {
 			evaluationResult.put(key, evaluationResult.get(key) / evaluationParam);
 		}
 		writeResult(taskId, evaluationResult, true);
+	}
+
+	private long estimateCrossValidationTime() {
+
+		long startTime = 0;
+		long endTime = 0;
+		long runTime = 0;
+
+		startTime = System.currentTimeMillis();
+
+		CollaborativeFilteringDataPreparer dataPreparer = new CollaborativeFilteringDataPreparer(inputDir);
+		HashMap<String, Double> evaluationResult = null;
+
+		endTime = System.currentTimeMillis();
+		runTime += endTime - startTime;
+
+		/**
+		 * First step: preparing data, split training and testing data set
+		 */
+		startTime = System.currentTimeMillis();
+
+		dataPreparer.splitDataSet(0, evaluationParam, inputDir, evaluationDir);
+
+		endTime = System.currentTimeMillis();
+		runTime += endTime - startTime;
+
+		/**
+		 * Second step: call Algorithm execute on training data set
+		 */
+		estimateTrainingTime();
+		// runTime +=
+
+		/**
+		 * Third step: convert result to boolean type
+		 */
+		HashMap<Integer, List<ScoreDTO>> groundTruth = DatasetUtil.getGroundTruth(evaluationDir + "testing\\Score.txt",
+				truthRank);
+		HashMap<Integer, List<ScoreDTO>> rankList = DatasetUtil.getRankList(evaluationDir + "result\\Score.txt",
+				truthRank);
+
+		endTime = System.currentTimeMillis();
+		runTime += endTime - startTime;
+		/**
+		 * Four step: compute evaluation
+		 */
+		evaluationResult = updateEvaluationResult(evaluationResult, computeEvaluation(rankList, groundTruth));
+
+		endTime = System.currentTimeMillis();
+		return runTime += endTime - startTime;
+
 	}
 
 	private HashMap<String, Double> updateEvaluationResult(HashMap<String, Double> oldResult,
@@ -222,7 +268,6 @@ public class Evaluation {
 			try {
 				mrr += ReciprocalRank.computeRR(rankList.get(userId), groundTruth.get(userId));
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			map += AveragePrecision.computeAP(rankList.get(userId), groundTruth.get(userId));
@@ -281,7 +326,7 @@ public class Evaluation {
 					bw.close();
 					fw.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+					log.error(e);
 					e.printStackTrace();
 				}
 			}
@@ -296,18 +341,24 @@ public class Evaluation {
 				}
 				sql = sql.substring(0, sql.length() - 1);
 				con.write(sql);
-				con.write("update task set Status = 'Done' where TaskId = " + taskId);
+				con.write("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
+					+ "', Status = 'Done' where TaskId = " + taskId);
 				con.close();
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			log.error(ex);
 		}
 	}
 
-	private void trainAlgorithm() {
+	private void trainAlgorithm(RecommendationAlgorithm alg) {
 		switch (algorithm) {
 		case "cf":
-			trainCF();
+			if (alg != null) {
+				trainCF((CollaborativeFiltering) alg);
+			} else {
+				trainCF();
+			}
 			break;
 		case "cb":
 			trainCB();
@@ -318,27 +369,59 @@ public class Evaluation {
 		default:
 			break;
 		}
+	}
 
+	private HashMap<Long, RecommendationAlgorithm> estimateTrainingTime() {
+		isEstimate = true;
+		switch (algorithm) {
+		case "cf":
+			return estimateTrainCFTime();
+		case "cb":
+			trainCB();
+			break;
+		case "hb":
+			trainHB();
+			break;
+		default:
+			break;
+		}
+		return null;
 	}
 
 	private void trainHB() {
-		//HybirdRecommeder hybridRecommender = new HybirdRecommeder();
-		//hybridRecommender.setInputDirectory(evaluationDir + "training\\");
-		//hybridRecommender.setOutputDirectory(evaluationDir + "result\\");
-		//hybridRecommender.init();
-		//hybridRecommender.hibridRecommend();
+		HybirdRecommeder hybridRecommender = new HybirdRecommeder(inputDir, evaluationDir, taskId, startTime);
+		hybridRecommender.setRunningEvaluation(true);
+		hybridRecommender.init();
+		hybridRecommender.run();
 	}
 
 	private void trainCB() {
-		CB cb = new CB(inputDir, evaluationDir, taskId, true);		
+		CB cb = new CB(inputDir, evaluationDir, taskId, true, startTime);
+		cb.setRunningEvaluation(true);
 		try {
 			cb.run();
 		} catch (Exception ex) {
+			log.error(ex);
 		}
 	}
 
-	private void trainCF() {
-		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId);
+	private void trainCF(CollaborativeFiltering cf) {
 		cf.recommend();
+	}
+
+	private void trainCF() {
+		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
+		cf.recommend();
+	}
+
+	private HashMap<Long, RecommendationAlgorithm> estimateTrainCFTime() {
+		long initModelTime = 0;
+		long tStart = System.currentTimeMillis();
+		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
+		long tEnd = System.currentTimeMillis();
+		initModelTime = tEnd - tStart;
+		HashMap<Long, RecommendationAlgorithm> returnMap = new HashMap<>();
+		returnMap.put(cf.estimateRecommendationTime(initModelTime), cf);
+		return returnMap;
 	}
 }

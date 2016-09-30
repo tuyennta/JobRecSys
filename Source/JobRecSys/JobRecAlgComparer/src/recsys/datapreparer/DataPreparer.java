@@ -5,6 +5,7 @@ import dto.JobDTO;
 import dto.ScoreDTO;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -26,6 +27,7 @@ public class DataPreparer {
 		while ((dto = dataReader.nextScore()) != null) {
 			scoreDTOList.add(dto);
 		}
+		Collections.shuffle(scoreDTOList);
 		return scoreDTOList;
 	}	
 

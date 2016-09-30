@@ -87,6 +87,10 @@
 												<td><p><%=task.getTimeCreate()%></p></td>
 											</tr>
 											<tr>
+												<td><p style="font-weight: bold;">Thời gian chạy:</p></td>
+												<td><p><%=task.getExecutionTime()%></p></td>
+											</tr>
+											<tr>
 												<td><p style="font-weight: bold;">Thuật toán:</p></td>
 												<td><p><%=bundle.getString(task.getAlgorithm())%></p></td>
 											</tr>

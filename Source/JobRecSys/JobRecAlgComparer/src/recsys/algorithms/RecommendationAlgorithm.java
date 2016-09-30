@@ -16,7 +16,17 @@ public abstract class RecommendationAlgorithm {
 	protected String configDirectory;
 	protected Properties config;
 	protected String taskId;
+	protected long startTime;
+	protected boolean isRunningEvaluation;
 	
+	public boolean isRunningEvaluation() {
+		return isRunningEvaluation;
+	}
+
+	public void setRunningEvaluation(boolean isRunningEvaluation) {
+		this.isRunningEvaluation = isRunningEvaluation;
+	}
+
 	protected static Logger log = Logger.getLogger(RecommendationAlgorithm.class.getName());
 
 	public String getTaskId() {
@@ -34,22 +44,26 @@ public abstract class RecommendationAlgorithm {
 	public void init() {
 	}
 
-	public RecommendationAlgorithm(String input, String output, String taskId) {
+	public RecommendationAlgorithm(String input, String output, String taskId, long startTime) {
 		this.inputDirectory = input;
 		this.outputDirectory = output;
 		this.testDirectory = "";
 		this.configDirectory = output;
+		this.startTime = startTime;
 		this.config = new Properties();
 		readConfiguration(configDirectory);
+		isRunningEvaluation = false;
 		this.taskId = taskId;
 	}
 
-	public RecommendationAlgorithm(String evaluationFolder, Properties config, String taskId) {
+	public RecommendationAlgorithm(String evaluationFolder, Properties config, String taskId, long startTime) {
 		this.inputDirectory = evaluationFolder + "training\\";
 		this.outputDirectory = evaluationFolder + "result\\";
 		this.testDirectory = evaluationFolder + "testing\\";
 		this.configDirectory = evaluationFolder;		
+		this.startTime = startTime;
 		this.config = config;
+		isRunningEvaluation = true;
 		this.taskId = taskId;
 	}
 

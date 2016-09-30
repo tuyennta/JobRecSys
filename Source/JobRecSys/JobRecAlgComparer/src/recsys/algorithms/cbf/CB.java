@@ -22,17 +22,18 @@ public class CB extends RecommendationAlgorithm {
 	static Logger log = Logger.getLogger("Author: Luan");
 	private DataSetReader dataSetReader = null;
 	private DocumentProcesser memDocProcessor = new DocumentProcesser();
-	private boolean trainMode = false; 
-	public CB(String input, String output, String taskId, boolean _trainMode) {	
-		super(input, output, taskId);
-		trainMode = _trainMode;		
-	}
-	public CB( boolean _trainMode) {			
-		trainMode = _trainMode;		
+	private boolean trainMode = false;
+
+	public CB(String input, String output, String taskId, boolean _trainMode, long startTime) {
+		super(input, output, taskId, startTime);
+		trainMode = _trainMode;
 	}
 
-	public void trainModel()
-	{
+	public CB(boolean _trainMode) {
+		trainMode = _trainMode;
+	}
+
+	public void trainModel() {
 		try {
 			log.info("Start training model");
 			dataSetReader = new DataSetReader(outputDirectory + "training\\");
@@ -49,7 +50,7 @@ public class CB extends RecommendationAlgorithm {
 			log.error(e);
 		}
 	}
-		
+
 	private void indexData() {
 		log.info("create dataset reader");
 		dataSetReader = new DataSetReader(this.inputDirectory);
@@ -73,11 +74,11 @@ public class CB extends RecommendationAlgorithm {
 		dataSetReader = new DataSetReader(this.inputDirectory);
 		log.info("read jobs from dataset");
 		dataSetReader.open(DataSetType.Job);
-		log.info("Building item profile");		
+		log.info("Building item profile");
 		JobDTO dto = null;
 		count = 0;
 		while ((dto = dataSetReader.nextJob()) != null) {
-			//if(count > 1000) break;
+			// if(count > 1000) break;
 			System.out.println("Index document : " + count++);
 			String itemId = dto.getJobId() + "";
 			String content = dto.getJobName() + ". ";
@@ -88,16 +89,13 @@ public class CB extends RecommendationAlgorithm {
 			content += dto.getCategory() + ". ";
 			memDocProcessor.addJob(itemId, content);
 		}
-		log.info("Building item done");		
+		log.info("Building item done");
 		dataSetReader = new DataSetReader(this.inputDirectory);
 		dataSetReader.open(DataSetType.Score);
 
-		if(trainMode)
-		{			
+		if (trainMode) {
 			trainModel();
-		}
-		else
-		{
+		} else {
 			log.info("Read labeled data");
 			ScoreDTO sdto = null;
 			while ((sdto = dataSetReader.nextScore()) != null) {
@@ -107,10 +105,11 @@ public class CB extends RecommendationAlgorithm {
 			}
 			log.info("Read labeled data is done");
 		}
-						
+
 	}
 
-	public HashMap<String, CbRecommededList> run(HashMap<String, List<RecommendedItem>> cf) throws IOException, InterruptedException {		
+	public HashMap<String, CbRecommededList> run(HashMap<String, List<RecommendedItem>> cf)
+			throws IOException, InterruptedException {
 		HashMap<String, CbRecommededList> rs = null;
 		log.info("open Lucene writer");
 		if (memDocProcessor.open()) {
@@ -123,20 +122,20 @@ public class CB extends RecommendationAlgorithm {
 			log.info("Build term model");
 			memDocProcessor.buildTermCopus();
 			log.info("Calculate df");
-			memDocProcessor.CalculateIdf(); 							
-			rs = memDocProcessor.getRecommendScoreForSpecificJobs(cf);		
+			memDocProcessor.CalculateIdf();
+			rs = memDocProcessor.getRecommendScoreForSpecificJobs(cf);
 			System.out.println("Get data from cb ok");
 			memDocProcessor.closeReader();
 			System.out.println("Close reader");
-			log.info("Close lucene reader");	
+			log.info("Close lucene reader");
 			log.info("Finish CB");
 		}
 		System.out.println("Return data size" + rs.size());
 		return rs;
 	}
-		
+
 	public void run() throws IOException, InterruptedException {
-		
+
 		log.info("open Lucene writer");
 		if (memDocProcessor.open()) {
 			log.info("open Lucene writer successful");
@@ -148,20 +147,19 @@ public class CB extends RecommendationAlgorithm {
 			log.info("Build term model");
 			memDocProcessor.buildTermCopus();
 			log.info("Calculate df");
-			memDocProcessor.CalculateIdf(); 	
+			memDocProcessor.CalculateIdf();
 			int topN = Integer.valueOf(config.getProperty("topn"));
-			memDocProcessor.recommendForTopN(topN);				        	        	
+			memDocProcessor.recommendForTopN(topN);
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
-			if(trainMode)
-			{
+			if (trainMode) {
 				memDocProcessor.writeFile(outputDirectory + "result\\", memDocProcessor.topNRecommendResult);
+			} else {
+				memDocProcessor.writeFile(outputDirectory, memDocProcessor.topNRecommendResult);
 			}
-			else
-			{
-				memDocProcessor.writeFile(outputDirectory , memDocProcessor.topNRecommendResult);					
-			}			
-			updateDB("update task set Status = 'Done' where TaskId = " + taskId);
+			if (!this.isRunningEvaluation)
+				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
+					+ "', Status = 'Done' where TaskId = " + taskId);
 			log.info("Finish CB");
 		}
 	}

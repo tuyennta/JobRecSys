@@ -77,7 +77,7 @@ public class EvaluationController {
 	}
 
 	/* Set task info and save it */	
-	task.setStatus("running");
+	task.setStatus("Running");
 	task.setType("eval");
 	task.setTimeCreate(new Timestamp(new Date().getTime()));
 	task.setTaskName(task.getAlgorithm() + "-" + task.getDataset() + "-" + task.getTimeCreate().getHours() + "-" + task.getTimeCreate().getMinutes());
