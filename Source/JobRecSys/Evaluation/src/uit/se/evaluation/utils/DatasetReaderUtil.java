@@ -8,6 +8,9 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.Scanner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import uit.se.evaluation.dtos.ScoreDTO;
 
 /**
@@ -17,7 +20,7 @@ import uit.se.evaluation.dtos.ScoreDTO;
  *
  */
 public class DatasetReaderUtil {
-
+	static Logger logger = LoggerFactory.getLogger(DatasetReaderUtil.class);
 	private static BufferedReader buf = null;
 	private static Scanner scan;
 
@@ -37,7 +40,9 @@ public class DatasetReaderUtil {
 			buf = new BufferedReader(new InputStreamReader(new FileInputStream(_file), "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
 			buf = null;
+			logger.error(e.toString());
 		} catch (FileNotFoundException e) {
+			logger.error(e.toString());
 			buf = null;
 		}
 	}
@@ -53,6 +58,7 @@ public class DatasetReaderUtil {
 		try {
 			data = buf.readLine();
 		} catch (IOException e) {
+			logger.error(e.toString());
 			close();
 			return null;
 		}
@@ -77,7 +83,7 @@ public class DatasetReaderUtil {
 			try {
 				buf.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				logger.error(e.toString());
 				buf = null;
 			}
 			buf = null;
@@ -96,6 +102,7 @@ public class DatasetReaderUtil {
 		try {
 			return Integer.parseInt(data);
 		} catch (Exception e) {
+			logger.error(e.toString());
 			return -1;
 		}
 	}
@@ -104,6 +111,7 @@ public class DatasetReaderUtil {
 		try {
 			return Float.parseFloat(data);
 		} catch (Exception e) {
+			logger.error(e.toString());
 			return -1.0f;
 		}
 	}
@@ -112,6 +120,7 @@ public class DatasetReaderUtil {
 		try {
 			return Boolean.parseBoolean(data);
 		} catch (Exception e) {
+			logger.error(e.toString());
 			return false;
 		}
 	}
