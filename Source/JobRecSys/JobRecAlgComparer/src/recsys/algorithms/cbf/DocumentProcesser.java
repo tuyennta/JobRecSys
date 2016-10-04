@@ -178,7 +178,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 	
 	
 	public HashMap<String, CbRecommededList> getRecommendScoreForSpecificJobs(HashMap<String,List<RecommendedItem>> cfResult) {
-
+		System.out.println("Start CB");
 		Set<String> jobKeySet = jobs.keySet();
 		double size = users.keySet().size() * jobKeySet.size();
 		ArrayList<RealVector> userRealVectors = new ArrayList<RealVector>();
@@ -211,18 +211,29 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 			}
 
 		}
+		//thiet lap cho CF
+		System.out.println("Prepare CF data");
 
-		for (String j : users.keySet()) {
+		for (String j : users.keySet()) {			
 			CbRecommededList cbRec = new CbRecommededList();
+			for (String i : jobKeySet) {				
+				cbRec.add(i, 0.0d);
+			}
 			List<RecommendedItem> rec = cfResult.get(j);
 			if(rec != null)
 			{
-				for(RecommendedItem i : rec)
+				for(RecommendedItem r : rec)
 				{
-					cbRec.add(i.getItemID() + "", i.getValue());
+					cbRec.update(r.getItemID() + "", r.getValue());
+					cbRec.max_score = 0;
 				}
 			}
 			recommendResult.put(j, cbRec);
+		}
+		//tao user vector
+		System.out.println("Prepare build user's profile vector");
+		for (String j : users.keySet()) {
+
 			try {
 				Map<String, Double> v_user = getWieghts(reader, users.get(j));
 
@@ -240,10 +251,11 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 
 			}
 		}
+		//get CPU core
+		System.out.println("Run cb");
 		Runtime runtime = Runtime.getRuntime();
 		int numOfProcessors = runtime.availableProcessors();
-		for (String i : jobKeySet) {
-			
+		for (String i : jobKeySet) {			
 			try {
 				Map<String, Double> v_job = getWieghts(reader, jobs.get(i));
 				RealVector rvJob = toRealVector(v_job);
@@ -267,10 +279,8 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 			}
 			System.out.println("Matching for jobid " + i + " \t" + (countTask * 100.0d / size) + " %");
 		}
-		System.out.println("done cb " + recommendResult.size());
-		 recommendResult.get(1);
+		System.out.println("done cb " + recommendResult.size());		 
 		return  this.recommendResult;
-
 	}
 
 	public void buildTermCopus() {
