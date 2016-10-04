@@ -4,6 +4,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -12,6 +14,7 @@ import org.apache.mahout.cf.taste.common.Weighting;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
+import org.apache.mahout.cf.taste.impl.recommender.CachingRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
@@ -116,23 +119,27 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		if (isEstimate) {
 			startIndex = 1;
 		}
+		HashMap<Integer, List<RecommendedItem>> recommendedList = new HashMap<>();
 		switch (config.getProperty("cf.type")) {
-
 		case "UserBased":
 			for (int i = startIndex; i < listUserIds.size(); i++) {
-				UserBased(listUserIds.get(i));
+				recommendedList.put(listUserIds.get(i), UserBased(listUserIds.get(i)));
 			}
 			break;
 		case "ItemBased":
 			for (int i = startIndex; i < listUserIds.size(); i++) {
-				ItemBased(listUserIds.get(i));
+				recommendedList.put(listUserIds.get(i), ItemBased(listUserIds.get(i)));
 			}
 			break;
 		default:
+			log.error("Incorrect configuration file - cf.type");
+			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
+					+ "', Status = 'Error' where TaskId = " + taskId);
 			break;
 		}
+		writeOutput(recommendedList);
 		if (!isRunningEvaluation)
-			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
+			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
 					+ "', Status = 'Done' where TaskId = " + taskId);
 	}
 
@@ -170,53 +177,57 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	/**
 	 * Recommendation using user-Based method
 	 */
-	private void UserBased(int userIDToRecommend) {
+	private List<RecommendedItem> UserBased(int userIDToRecommend) {
 		// initialize recommender
 		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
 		try {
-			writeOutput(userIDToRecommend, recommender.recommend(userIDToRecommend,
-					Integer.valueOf(config.getProperty("topn")), new IDRescorer() {
-						@Override
-						public double rescore(long userid, double originalSocre) {
-							return originalSocre;
-						}
+			CachingRecommender cachingRecommender = new CachingRecommender(recommender);
+			double x = userSimilarity.userSimilarity(1, 4);
+			itemSimilarity.itemSimilarity(101, 105);
+			return cachingRecommender.recommend(userIDToRecommend, topn, new IDRescorer() {
+				@Override
+				public double rescore(long userid, double originalSocre) {
+					return originalSocre;
+				}
 
-						@Override
-						public boolean isFiltered(long itemId) {
-							return false;
-						}
-					}));
+				@Override
+				public boolean isFiltered(long itemId) {
+					return false;
+				}
+			});
 		} catch (TasteException e) {
 			e.printStackTrace();
 			log.error(e);
 			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
+		return null;
 	}
 
 	/**
 	 * Recommendation using item-Based method
 	 */
-	private void ItemBased(int userIDToRecommend) {
+	private List<RecommendedItem> ItemBased(int userIDToRecommend) {
 		// initialize recommender
 		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
 		try {
-			writeOutput(userIDToRecommend, recommender.recommend(userIDToRecommend,
-					Integer.valueOf(config.getProperty("topn")), new IDRescorer() {
-						@Override
-						public double rescore(long userid, double originalSocre) {
-							return originalSocre;
-						}
+			CachingRecommender cachingRecommender = new CachingRecommender(recommender);
+			return cachingRecommender.recommend(userIDToRecommend, topn, new IDRescorer() {
+				@Override
+				public double rescore(long userid, double originalSocre) {
+					return originalSocre;
+				}
 
-						@Override
-						public boolean isFiltered(long itemId) {
-							return false;
-						}
-					}));
+				@Override
+				public boolean isFiltered(long itemId) {
+					return false;
+				}
+			});
 		} catch (TasteException e) {
 			e.printStackTrace();
 			log.error(e);
 			updateDB("update task set Status = 'Error' where TaskId = " + taskId);
 		}
+		return null;
 	}
 
 	/**
@@ -278,7 +289,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		}
 	}
 
-	private void writeOutput(int userId, List<RecommendedItem> recommendedItems) {
+	private void writeOutput(HashMap<Integer, List<RecommendedItem>> recommendedList) {
 		FileWriter fwr;
 		try {
 			File out = new File(outputDirectory);
@@ -289,13 +300,21 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			if (!fileOut.exists()) {
 				fileOut.createNewFile();
 			}
+			PrintWriter pw = new PrintWriter(fileOut);
+			pw.print("");
+			pw.close();
 			fwr = new FileWriter(fileOut, true);
+			fwr.write("");
 			BufferedWriter wr = new BufferedWriter(fwr);
 			System.out.println("start writing data");
-			for (RecommendedItem rec : recommendedItems) {
-				wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-				System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-				wr.newLine();
+			System.out.println("Users: " + listUserIds.size());
+			System.out.println("Recommend Users: " + recommendedList.keySet().size());
+			for (Integer userId : recommendedList.keySet()) {
+				for (RecommendedItem rec : recommendedList.get(userId)) {
+					wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+					System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+					wr.newLine();
+				}
 			}
 			wr.close();
 		} catch (IOException e) {

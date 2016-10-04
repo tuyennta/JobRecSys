@@ -18,6 +18,7 @@ public abstract class RecommendationAlgorithm {
 	protected String taskId;
 	protected long startTime;
 	protected boolean isRunningEvaluation;
+	protected int topn;
 	
 	public boolean isRunningEvaluation() {
 		return isRunningEvaluation;
@@ -52,6 +53,7 @@ public abstract class RecommendationAlgorithm {
 		this.startTime = startTime;
 		this.config = new Properties();
 		readConfiguration(configDirectory);
+		topn = Integer.valueOf(config.getProperty("topn"));
 		isRunningEvaluation = false;
 		this.taskId = taskId;
 	}
@@ -65,6 +67,7 @@ public abstract class RecommendationAlgorithm {
 		this.config = config;
 		isRunningEvaluation = true;
 		this.taskId = taskId;
+		topn = Integer.valueOf(config.getProperty("topn"));
 	}
 
 	public String getInputDirectory() {
