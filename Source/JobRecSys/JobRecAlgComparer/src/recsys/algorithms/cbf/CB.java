@@ -1,13 +1,8 @@
 package recsys.algorithms.cbf;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.log4j.Logger;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 
@@ -22,15 +17,9 @@ public class CB extends RecommendationAlgorithm {
 	static Logger log = Logger.getLogger("Author: Luan");
 	private DataSetReader dataSetReader = null;
 	private DocumentProcesser memDocProcessor = new DocumentProcesser();
-	private boolean trainMode = false;
 
 	public CB(String input, String output, String taskId, boolean _trainMode, long startTime) {
 		super(input, output, taskId, startTime);
-		trainMode = _trainMode;
-	}
-
-	public CB(boolean _trainMode) {
-		trainMode = _trainMode;
 	}
 
 	public void trainModel() {
@@ -93,7 +82,7 @@ public class CB extends RecommendationAlgorithm {
 		dataSetReader = new DataSetReader(this.inputDirectory);
 		dataSetReader.open(DataSetType.Score);
 
-		if (trainMode) {
+		if (this.isRunningEvaluation) {
 			trainModel();
 		} else {
 			log.info("Read labeled data");
@@ -152,14 +141,13 @@ public class CB extends RecommendationAlgorithm {
 			memDocProcessor.recommendForTopN(topN);
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
-			if (trainMode) {
+			if (this.isRunningEvaluation) {
 				memDocProcessor.writeFile(outputDirectory + "result\\", memDocProcessor.topNRecommendResult);
 			} else {
-				memDocProcessor.writeFile(outputDirectory, memDocProcessor.topNRecommendResult);
-			}
-			if (!this.isRunningEvaluation)
+				memDocProcessor.writeFile(outputDirectory, memDocProcessor.topNRecommendResult);			
 				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
 					+ "', Status = 'Done' where TaskId = " + taskId);
+			}
 			log.info("Finish CB");
 		}
 	}

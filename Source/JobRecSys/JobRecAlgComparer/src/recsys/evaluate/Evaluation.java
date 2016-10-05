@@ -3,8 +3,10 @@ package recsys.evaluate;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -44,7 +46,8 @@ public class Evaluation {
 	boolean isEstimate = false;
 	static Logger log = Logger.getLogger(Evaluation.class.getName());
 
-	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId, long startTime) {
+	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId,
+			long startTime) {
 		this.algorithm = algorithm;
 		this.evaluationParam = evalParam;
 		this.evaluationType = evalType;
@@ -134,7 +137,7 @@ public class Evaluation {
 			/**
 			 * First step: preparing data, split training and testing data set
 			 */
-			
+
 			dataPreparer.splitDataSet(i, evaluationParam, inputDir, evaluationDir);
 
 			/**
@@ -341,8 +344,8 @@ public class Evaluation {
 				}
 				sql = sql.substring(0, sql.length() - 1);
 				con.write(sql);
-				con.write("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
-					+ "', Status = 'Done' where TaskId = " + taskId);
+				con.write("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
+						+ "', Status = 'Done' where TaskId = " + taskId);
 				con.close();
 			}
 		} catch (Exception ex) {
@@ -389,19 +392,40 @@ public class Evaluation {
 	}
 
 	private void trainHB() {
-		HybirdRecommeder hybridRecommender = new HybirdRecommeder(inputDir, evaluationDir, taskId, startTime);
-		hybridRecommender.setRunningEvaluation(true);
-		hybridRecommender.init();
-		hybridRecommender.run();
+		if (cleanup()) {
+			HybirdRecommeder hybridRecommender = new HybirdRecommeder(inputDir, evaluationDir, taskId, startTime);
+			hybridRecommender.setRunningEvaluation(true);
+			hybridRecommender.init();
+			hybridRecommender.run();
+		}
+	}
+
+	private boolean cleanup() {
+		File file = new File(this.evaluationDir + "result\\Score.txt");
+		if (file.exists()) {
+			PrintWriter pw;
+			try {
+				pw = new PrintWriter(file);
+				pw.print("");
+				pw.close();				
+			} catch (IOException e) {
+				log.error(e);
+				e.printStackTrace();
+				return false;
+			}			
+		}			
+		return true;
 	}
 
 	private void trainCB() {
-		CB cb = new CB(inputDir, evaluationDir, taskId, true, startTime);
-		cb.setRunningEvaluation(true);
-		try {
-			cb.run();
-		} catch (Exception ex) {
-			log.error(ex);
+		if (cleanup()) {
+			CB cb = new CB(inputDir, evaluationDir, taskId, true, startTime);
+			cb.setRunningEvaluation(true);
+			try {
+				cb.run();
+			} catch (Exception ex) {
+				log.error(ex);
+			}
 		}
 	}
 
@@ -410,8 +434,10 @@ public class Evaluation {
 	}
 
 	private void trainCF() {
-		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
-		cf.recommend();
+		if (cleanup()) {
+			CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
+			cf.recommend();
+		}
 	}
 
 	private HashMap<Long, RecommendationAlgorithm> estimateTrainCFTime() {

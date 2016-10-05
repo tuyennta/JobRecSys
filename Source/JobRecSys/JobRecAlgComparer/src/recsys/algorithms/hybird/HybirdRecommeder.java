@@ -25,7 +25,9 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 
 	public void init() {
 		cbRecommender = new CB(inputDirectory, outputDirectory, taskId, false, this.startTime);
+		cbRecommender.setRunningEvaluation(this.isRunningEvaluation);
 		cfRecommender = new CollaborativeFiltering(this.inputDirectory, this.outputDirectory, taskId, startTime);
+		cfRecommender.setRunningEvaluation(this.isRunningEvaluation);
 	}
 
 	private HashMap<String, List<RecommendedItem>> cfResults = new HashMap<String, List<RecommendedItem>>();
@@ -56,22 +58,16 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 	}
 
 	public void run() {
-		List<Integer> listUser = cfRecommender.getListUserIds();
-
-		for (int i : listUser) {
-			System.out.println("Get recommed for user " + i);
-			List<RecommendedItem> data = cfRecommender.getListRecommendItemItemBased(1, 40000);
-			cfResults.put(i + "", data);
-		}
+		cfResults = cfRecommender.recommend();
 		try {
 			HashMap<String, CbRecommededList> data = cbRecommender.run(cfResults);
 			if (this.isRunningEvaluation)
 				writeResult(outputDirectory + "result\\", data);
-			else
+			else {
 				writeResult(outputDirectory, data);
-			if (!this.isRunningEvaluation)
-				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
-					+ "', Status = 'Done' where TaskId = " + taskId);
+				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
+						+ "', Status = 'Done' where TaskId = " + taskId);
+			}
 			log.info("Finish HB");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

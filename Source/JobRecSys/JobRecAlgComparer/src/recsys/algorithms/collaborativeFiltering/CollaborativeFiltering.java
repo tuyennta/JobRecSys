@@ -114,21 +114,24 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		}
 	}
 
-	public void recommend() {
+	public HashMap<String, List<RecommendedItem>> recommend() {
 		int startIndex = 0;
 		if (isEstimate) {
 			startIndex = 1;
 		}
-		HashMap<Integer, List<RecommendedItem>> recommendedList = new HashMap<>();
+		HashMap<String, List<RecommendedItem>> recommendedList = new HashMap<>();
+		int currentUser;
 		switch (config.getProperty("cf.type")) {
 		case "UserBased":
 			for (int i = startIndex; i < listUserIds.size(); i++) {
-				recommendedList.put(listUserIds.get(i), UserBased(listUserIds.get(i)));
+				currentUser = listUserIds.get(i);
+				recommendedList.put(String.valueOf(currentUser), UserBased(currentUser));
 			}
 			break;
 		case "ItemBased":
 			for (int i = startIndex; i < listUserIds.size(); i++) {
-				recommendedList.put(listUserIds.get(i), ItemBased(listUserIds.get(i)));
+				currentUser = listUserIds.get(i);
+				recommendedList.put(String.valueOf(currentUser), ItemBased(currentUser));
 			}
 			break;
 		default:
@@ -141,6 +144,8 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		if (!isRunningEvaluation)
 			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
 					+ "', Status = 'Done' where TaskId = " + taskId);
+		
+		return recommendedList;
 	}
 
 	/**
@@ -177,13 +182,11 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	/**
 	 * Recommendation using user-Based method
 	 */
-	private List<RecommendedItem> UserBased(int userIDToRecommend) {
+	public List<RecommendedItem> UserBased(int userIDToRecommend) {
 		// initialize recommender
 		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
 		try {
-			CachingRecommender cachingRecommender = new CachingRecommender(recommender);
-			double x = userSimilarity.userSimilarity(1, 4);
-			itemSimilarity.itemSimilarity(101, 105);
+			CachingRecommender cachingRecommender = new CachingRecommender(recommender);						
 			return cachingRecommender.recommend(userIDToRecommend, topn, new IDRescorer() {
 				@Override
 				public double rescore(long userid, double originalSocre) {
@@ -206,7 +209,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	/**
 	 * Recommendation using item-Based method
 	 */
-	private List<RecommendedItem> ItemBased(int userIDToRecommend) {
+	public List<RecommendedItem> ItemBased(int userIDToRecommend) {
 		// initialize recommender
 		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
 		try {
@@ -289,7 +292,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		}
 	}
 
-	private void writeOutput(HashMap<Integer, List<RecommendedItem>> recommendedList) {
+	private void writeOutput(HashMap<String, List<RecommendedItem>> recommendedList) {
 		FileWriter fwr;
 		try {
 			File out = new File(outputDirectory);
@@ -309,7 +312,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			System.out.println("start writing data");
 			System.out.println("Users: " + listUserIds.size());
 			System.out.println("Recommend Users: " + recommendedList.keySet().size());
-			for (Integer userId : recommendedList.keySet()) {
+			for (String userId : recommendedList.keySet()) {
 				for (RecommendedItem rec : recommendedList.get(userId)) {
 					wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
 					System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
@@ -321,50 +324,5 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			log.error(e);
 			e.printStackTrace();
 		}
-	}
-
-	public List<RecommendedItem> getListRecommendItemUserBased(int userId, int numberOfItems) {
-		List<RecommendedItem> cfResult = null;
-		// initialize recommender
-		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
-		try {
-			cfResult = recommender.recommend(userId, numberOfItems, new IDRescorer() {
-				@Override
-				public double rescore(long userid, double originalSocre) {
-					return originalSocre;
-				}
-
-				@Override
-				public boolean isFiltered(long itemId) {
-					return false;
-				}
-			});
-		} catch (TasteException e) {
-
-		}
-		return cfResult;
-	}
-
-	public List<RecommendedItem> getListRecommendItemItemBased(int userId, int numberOfItem) {
-		List<RecommendedItem> ibResult = null;
-		recommender = new GenericItemBasedRecommender(dataModel, itemSimilarity);
-		try {
-			ibResult = recommender.recommend(userId, numberOfItem, new IDRescorer() {
-
-				@Override
-				public double rescore(long userd, double originalScore) {
-					// TODO Auto-generated method stub
-					return originalScore;
-				}
-
-				@Override
-				public boolean isFiltered(long arg0) {
-					// TODO Auto-generated method stub
-					return false;
-				}
-			});
-		} catch (TasteException e) {
-		}
-		return ibResult;
 	}
 }
