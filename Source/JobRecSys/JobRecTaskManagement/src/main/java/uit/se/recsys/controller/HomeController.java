@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import uit.se.recsys.bean.TaskBean;
+import uit.se.recsys.bean.TaskCFBean;
 import uit.se.recsys.bo.TaskBO;
 import uit.se.recsys.bo.UserBO;
 import uit.se.recsys.utils.DatasetUtil;
@@ -71,7 +72,7 @@ public class HomeController {
     }
 
     @RequestMapping(value = { "/", "trang-chu" }, method = RequestMethod.POST)
-    public String createTask(@ModelAttribute("task") TaskBean task,@RequestParam("config") MultipartFile config,
+    public String createTask(@ModelAttribute("task") TaskCFBean task,@RequestParam("config") MultipartFile config,
 			     BindingResult result, Model model,
 			     HttpSession session) {
 
@@ -123,7 +124,7 @@ public class HomeController {
     private void bindingData(Model model) {
 
 	/* Binding new TaskBean and dataset to view */
-	model.addAttribute("task", new TaskBean());
+	model.addAttribute("task", new TaskCFBean());
 	model.addAttribute("datasets",
 			dsUtil.getDatasets(ROOT_PATH
 					+ SecurityUtil.getInstance()

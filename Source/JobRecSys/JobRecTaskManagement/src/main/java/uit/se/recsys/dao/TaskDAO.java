@@ -18,6 +18,9 @@ import org.springframework.stereotype.Repository;
 
 import uit.se.recsys.bean.MetricBean;
 import uit.se.recsys.bean.TaskBean;
+import uit.se.recsys.bean.TaskCBBean;
+import uit.se.recsys.bean.TaskCFBean;
+import uit.se.recsys.bean.TaskHBBean;
 import uit.se.recsys.utils.DatasetUtil;
 
 @Repository
@@ -40,7 +43,7 @@ public class TaskDAO {
 	    statement.setString(4, task.getStatus());
 	    statement.setString(5, task.getAlgorithm());
 	    statement.setString(6, task.getDataset());
-	    statement.setString(7, task.getType());	    
+	    statement.setString(7, task.getType());
 	    statement.setString(8, task.getEvaluationType());
 	    statement.setInt(9, task.getEvaluationParam());
 	    statement.setString(10, "0");
@@ -63,13 +66,27 @@ public class TaskDAO {
 	    PreparedStatement statement = connection.prepareStatement(sql);
 	    ResultSet rs = statement.executeQuery();
 	    while (rs.next()) {
-		TaskBean task = new TaskBean();
+		TaskBean task = null;
+		switch (rs.getString("Algorithm")) {
+		case "cf":
+		    task = new TaskCFBean();
+		    break;
+		case "cb":
+		    task = new TaskCBBean();
+		    break;
+		case "hb":
+		    task = new TaskHBBean();
+		    break;
+		default:
+		    break;
+		}
 		task.setTaskId(rs.getInt("TaskId"));
 		task.setUserId(rs.getInt("UserId"));
 		task.setAlgorithm(rs.getString("Algorithm"));
 		task.setDataset(rs.getString("Dataset"));
 		task.setStatus(rs.getString("Status"));
-		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
+		task.setExecutionTime(convertExecutionTime(
+				rs.getString("ExecutionTime")));
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
@@ -98,14 +115,27 @@ public class TaskDAO {
 
     public List<TaskBean> getEvaluationTasks() {
 	String sql = "select * from task where TaskType = 'eval'";
-	
+
 	List<TaskBean> taskBeans = new ArrayList<TaskBean>();
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement statement = connection.prepareStatement(sql);
 	    ResultSet rs = statement.executeQuery();
 	    while (rs.next()) {
-		TaskBean task = new TaskBean();
+		TaskBean task = null;
+		switch (rs.getString("Algorithm")) {
+		case "cf":
+		    task = new TaskCFBean();
+		    break;
+		case "cb":
+		    task = new TaskCBBean();
+		    break;
+		case "hb":
+		    task = new TaskHBBean();
+		    break;
+		default:
+		    break;
+		}
 		task.setTaskId(rs.getInt("TaskId"));
 		task.setUserId(rs.getInt("UserId"));
 		task.setAlgorithm(rs.getString("Algorithm"));
@@ -114,7 +144,8 @@ public class TaskDAO {
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
-		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
+		task.setExecutionTime(convertExecutionTime(
+				rs.getString("ExecutionTime")));
 		task.setEvaluationParam(Integer
 				.parseInt(rs.getString("EvaluationParam")));
 		task.setMetrics(getMetricOfTask(task.getTaskId()));
@@ -130,15 +161,16 @@ public class TaskDAO {
 	}
 	return taskBeans;
     }
-    
-    public HashMap<Integer, String> getTaskStatus(String taskType){
-	String sql = "select TaskId, Status from task where TaskType = '" + taskType + "'";
+
+    public HashMap<Integer, String> getTaskStatus(String taskType) {
+	String sql = "select TaskId, Status from task where TaskType = '"
+			+ taskType + "'";
 	HashMap<Integer, String> tasks = new HashMap<>();
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement stm = connection.prepareStatement(sql);
 	    ResultSet rs = stm.executeQuery();
-	    while(rs.next()){
+	    while (rs.next()) {
 		tasks.put(rs.getInt("TaskId"), rs.getString("Status"));
 	    }
 	    rs.close();
@@ -148,7 +180,7 @@ public class TaskDAO {
 	} catch (SQLException e) {
 	    e.printStackTrace();
 	    return null;
-	}	
+	}
     }
 
     private List<MetricBean> getMetricOfTask(int taskId) {
@@ -178,13 +210,26 @@ public class TaskDAO {
 
     public TaskBean getTaskById(int id) {
 	String sql = "select * from task where TaskId = ?";
-	TaskBean task = new TaskBean();
+	TaskBean task = null;
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement statement = connection.prepareStatement(sql);
 	    statement.setInt(1, id);
 	    ResultSet rs = statement.executeQuery();
 	    while (rs.next()) {
+		switch (rs.getString("Algorithm")) {
+		case "cf":
+		    task = new TaskCFBean();
+		    break;
+		case "cb":
+		    task = new TaskCBBean();
+		    break;
+		case "hb":
+		    task = new TaskHBBean();
+		    break;
+		default:
+		    break;
+		}
 		task.setTaskId(rs.getInt("TaskId"));
 		task.setUserId(rs.getInt("UserId"));
 		task.setAlgorithm(rs.getString("Algorithm"));
@@ -193,7 +238,8 @@ public class TaskDAO {
 		task.setTaskName(rs.getString("TaskName"));
 		task.setTimeCreate(rs.getTimestamp("TimeCreate"));
 		task.setType(rs.getString("TaskType"));
-		task.setExecutionTime(convertExecutionTime(rs.getString("ExecutionTime")));
+		task.setExecutionTime(convertExecutionTime(
+				rs.getString("ExecutionTime")));
 		task.setConfig(readConfig(task));
 		task.setMetrics(getMetricOfTask(task.getTaskId()));
 	    }
@@ -205,21 +251,21 @@ public class TaskDAO {
 	}
 	return task;
     }
-    
-    private String convertExecutionTime(String time){
+
+    private String convertExecutionTime(String time) {
 	long _time = Long.valueOf(time);
 	int min = 0;
 	int sec = 0;
 	int hour = 0;
 	String converted = "0 giây";
-	if(_time <= 60){
+	if (_time <= 60) {
 	    converted = _time + " giây";
-	}else{
-	    min = (int)_time / 60;
-	    sec = (int)_time % 60;
-	    if(min <= 60){
-		converted = min + " phút, " + sec + " giây"; 
-	    }else{
+	} else {
+	    min = (int) _time / 60;
+	    sec = (int) _time % 60;
+	    if (min <= 60) {
+		converted = min + " phút, " + sec + " giây";
+	    } else {
 		hour = min / 60;
 		min %= 60;
 		converted = hour + " giờ, " + min + " phút, " + sec + " giây";

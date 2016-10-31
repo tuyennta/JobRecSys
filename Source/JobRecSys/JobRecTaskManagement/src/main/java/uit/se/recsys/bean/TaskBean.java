@@ -9,34 +9,36 @@ import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.stereotype.Component;
 
-@Component
-public class TaskBean {
-    int taskId;
-    int userId;
+public abstract class TaskBean {
+    protected int taskId;
+    protected int userId;
     @NotNull
     @NotEmpty
-    String taskName;
-    Timestamp timeCreate;
-    String status;
+    protected String taskName;
+    protected Timestamp timeCreate;
+    protected String status;
     @NotNull
     @NotEmpty
-    String algorithm;
+    protected String algorithm;
     @NotNull
     @NotEmpty
-    String dataset;
+    protected String dataset;
     @NotNull
     @NotEmpty
-    String type;
-    List<MetricBean> metrics;
-    int evaluationParam;
+    protected String type;
+    protected List<MetricBean> metrics;
+    protected int evaluationParam;
     @NotNull
     @NotEmpty
-    String evaluationType;
-    Properties config;
-    int testSize;
-    int testFold;
-    String executionTime;
+    protected String evaluationType;
+    protected Properties config;
+    protected int topn;
+    protected int testSize;
+    protected int testFold;
+    protected String executionTime;
     
+    public abstract String getDisplayName();
+    public abstract String getRowName();
 
     public String getExecutionTime() {
         return executionTime;
@@ -50,6 +52,12 @@ public class TaskBean {
 	return taskId;
     }
 
+    public int getTopn() {
+        return Integer.valueOf((String) this.config.get("topn"));
+    }
+    public void setTopn(int topn) {
+        this.topn = topn;
+    }
     public void setTaskId(int taskId) {
 	this.taskId = taskId;
     }
