@@ -1,5 +1,6 @@
 package recsys.algorithms.cbf;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -142,13 +143,50 @@ public class CB extends RecommendationAlgorithm {
 			memDocProcessor.closeReader();
 			log.info("Close lucene reader");
 			if (this.isRunningEvaluation) {
-				memDocProcessor.writeFile(outputDirectory + "result\\", memDocProcessor.topNRecommendResult);
+				writeFile(outputDirectory + "result\\", memDocProcessor.topNRecommendResult);
 			} else {
-				memDocProcessor.writeFile(outputDirectory, memDocProcessor.topNRecommendResult);			
-				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime)/1000)
-					+ "', Status = 'Done' where TaskId = " + taskId);
+				writeFile(outputDirectory, memDocProcessor.topNRecommendResult);
+				this.setupDBConnection("jobrectaskmanagement");
+				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
+						+ "', Status = 'Done' where TaskId = " + taskId);
 			}
 			log.info("Finish CB");
+		}
+	}
+
+	private void writeFile(String path, HashMap<String, CBTopNJobs> rss) {
+		try {
+			FileWriter fw = new FileWriter(path + "Score.txt", true);
+			System.out.println("Start writing result!");
+			if (this.isRunningEvaluation) {
+				for (String i : rss.keySet()) {
+					double max = rss.get(i).max_score;
+					int topN = rss.get(i).topN;
+					double[] score = rss.get(i).TopNscore;
+					String[] job = rss.get(i).TopNjob;
+					for (int k = 0; k < topN; k++) {
+						fw.append(i + "\t" + job[k] + "\t" + (1.0d + ((score[k] / max) * 4.0d)) + "\r\n");
+					}
+				}
+			} else {
+				this.setupDBConnection("recsys");
+				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
+				for (String i : rss.keySet()) {
+					double max = rss.get(i).max_score;
+					int topN = rss.get(i).topN;
+					double[] score = rss.get(i).TopNscore;
+					String[] job = rss.get(i).TopNjob;
+					for (int k = 0; k < topN; k++) {
+						fw.append(i + "\t" + job[k] + "\t" + (1.0d + ((score[k] / max) * 4.0d)) + "\r\n");
+						sql += "('cb', " + i + "," + job[k] + "," + (1.0d + ((score[k] / max) * 4.0d)) + "),";
+					}
+				}
+				this.updateDB(sql.substring(0, sql.length() - 1));
+			}
+
+			fw.close();
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
 	}
 }

@@ -46,6 +46,8 @@ public class Evaluation {
 	boolean isEstimate = false;
 	static Logger log = Logger.getLogger(Evaluation.class.getName());
 
+	public Evaluation(){}
+	
 	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId,
 			long startTime) {
 		this.algorithm = algorithm;
@@ -116,6 +118,21 @@ public class Evaluation {
 				truthRank);
 		HashMap<Integer, List<ScoreDTO>> rankList = DatasetUtil.getRankList(evaluationDir + "result\\Score.txt",
 				truthRank);
+
+		/**
+		 * Fourth step: evaluation
+		 */
+		HashMap<String, Double> evaluationResult = computeEvaluation(rankList, groundTruth);
+
+		/**
+		 * Fifth step: write result to DB
+		 */
+		writeResult(taskId, evaluationResult, true);
+	}
+
+	public void evaluateFromFile(String rankedListFile, String groundTruthFile, int truthRank, String taskId) {
+		HashMap<Integer, List<ScoreDTO>> groundTruth = DatasetUtil.getGroundTruth(groundTruthFile, truthRank);
+		HashMap<Integer, List<ScoreDTO>> rankList = DatasetUtil.getRankList(rankedListFile, truthRank);
 
 		/**
 		 * Fourth step: evaluation
@@ -407,13 +424,13 @@ public class Evaluation {
 			try {
 				pw = new PrintWriter(file);
 				pw.print("");
-				pw.close();				
+				pw.close();
 			} catch (IOException e) {
 				log.error(e);
 				e.printStackTrace();
 				return false;
-			}			
-		}			
+			}
+		}
 		return true;
 	}
 

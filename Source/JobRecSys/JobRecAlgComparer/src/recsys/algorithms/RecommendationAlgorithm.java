@@ -19,7 +19,8 @@ public abstract class RecommendationAlgorithm {
 	protected long startTime;
 	protected boolean isRunningEvaluation;
 	protected int topn;
-	
+	protected MysqlDBConnection mysqlConnection;
+
 	public boolean isRunningEvaluation() {
 		return isRunningEvaluation;
 	}
@@ -56,18 +57,20 @@ public abstract class RecommendationAlgorithm {
 		topn = Integer.valueOf(config.getProperty("topn"));
 		isRunningEvaluation = false;
 		this.taskId = taskId;
+		mysqlConnection = new MysqlDBConnection("jobrectaskmanagement.properties");
 	}
 
 	public RecommendationAlgorithm(String evaluationFolder, Properties config, String taskId, long startTime) {
 		this.inputDirectory = evaluationFolder + "training\\";
 		this.outputDirectory = evaluationFolder + "result\\";
 		this.testDirectory = evaluationFolder + "testing\\";
-		this.configDirectory = evaluationFolder;		
+		this.configDirectory = evaluationFolder;
 		this.startTime = startTime;
 		this.config = config;
 		isRunningEvaluation = true;
 		this.taskId = taskId;
 		topn = Integer.valueOf(config.getProperty("topn"));
+		mysqlConnection = new MysqlDBConnection("jobrectaskmanagement.properties");
 	}
 
 	public String getInputDirectory() {
@@ -92,17 +95,24 @@ public abstract class RecommendationAlgorithm {
 		} catch (IOException e) {
 			log.error(e);
 			e.printStackTrace();
-		}catch (NullPointerException ex){
+		} catch (NullPointerException ex) {
 			log.error(ex);
 			ex.printStackTrace();
 		}
 	}
-	
-	protected void updateDB(String sql){		
-		MysqlDBConnection mysql = new MysqlDBConnection("dbconfig.properties");		
-		if(mysql.connect()){
-			mysql.write(sql);
-			mysql.close();
+
+	protected void updateDB(String sql) {
+		try {
+			if (mysqlConnection.connect()) {
+				mysqlConnection.write(sql);
+				mysqlConnection.close();
+			}
+		} catch (Exception e) {
+			log.error(e);
 		}
+	}
+
+	protected void setupDBConnection(String configFileName) {
+		mysqlConnection = new MysqlDBConnection(configFileName + ".properties");
 	}
 }

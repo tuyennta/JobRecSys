@@ -319,27 +319,4 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 		}
 
 	}
-
-	public void writeFile(String path, HashMap<String, CBTopNJobs> rss) {
-		try {
-			FileWriter fw = new FileWriter(path + "Score.txt", true);
-			System.out.println("Start writing result!");
-			for (String i : rss.keySet()) {
-				double max = rss.get(i).max_score;
-				int topN = rss.get(i).topN;
-				double[] score = rss.get(i).TopNscore;
-				String[] job = rss.get(i).TopNjob;
-				for (int k = 0; k < topN; k++) {
-					fw.append(i + "\t" + job[k] + "\t" + (1.0d + ((score[k] / max) * 4.0d)) + "\r\n");
-				}
-
-			}
-			fw.close();
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
-	}
-	
-	
-
 }

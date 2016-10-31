@@ -39,18 +39,37 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 			FileWriter fw = new FileWriter(path + "Score.txt", true);
 			System.out.println("Start writing result!");
 			double alpha = Double.parseDouble(config.getProperty("hb.alpha"));
-			for (String i : rss.keySet()) {
+			if (this.isRunningEvaluation) {
+				for (String i : rss.keySet()) {
 
-				ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
-				ArrayList<String> jobs = rss.get(i).getJobsArray();
-				CBTopNJobs topNJobs = new CBTopNJobs(topN);
-				for (int k = 0; k < scores.size(); k++) {
-					topNJobs.add(jobs.get(k), scores.get(k));
+					ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
+					ArrayList<String> jobs = rss.get(i).getJobsArray();
+					CBTopNJobs topNJobs = new CBTopNJobs(topN);
+					for (int k = 0; k < scores.size(); k++) {
+						topNJobs.add(jobs.get(k), scores.get(k));
+					}
+					for (int k = 0; k < topN; k++) {
+						fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
+					}
 				}
-				for (int k = 0; k < topN; k++) {
-					fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
-				}
+			} else {
+				this.setupDBConnection("recsys");
+				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
+				for (String i : rss.keySet()) {
+					ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
+					ArrayList<String> jobs = rss.get(i).getJobsArray();
+					CBTopNJobs topNJobs = new CBTopNJobs(topN);
+					for (int k = 0; k < scores.size(); k++) {
+						topNJobs.add(jobs.get(k), scores.get(k));
+					}
+					for (int k = 0; k < topN; k++) {
+						fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
+						sql += "('hb', " + i + "," + topNJobs.TopNjob[k] + "," + topNJobs.TopNscore[k] + "),";
+					}
+				}				
+				this.updateDB(sql.substring(0, sql.length() - 1));
 			}
+
 			fw.close();
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -58,13 +77,14 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 	}
 
 	public void run() {
-		cfResults = cfRecommender.recommend();
+		cfResults = cfRecommender.getRecommendedList();
 		try {
 			HashMap<String, CbRecommededList> data = cbRecommender.run(cfResults);
 			if (this.isRunningEvaluation)
 				writeResult(outputDirectory + "result\\", data);
 			else {
 				writeResult(outputDirectory, data);
+				this.setupDBConnection("jobrectaskmanagement");
 				updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
 						+ "', Status = 'Done' where TaskId = " + taskId);
 			}

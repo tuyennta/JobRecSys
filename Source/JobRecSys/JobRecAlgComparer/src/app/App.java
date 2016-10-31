@@ -20,8 +20,14 @@ public class App {
 			evaluate(args, startTime);
 			break;
 		default:
+			evaluateFromFile(args, startTime);
 			break;
 		}
+	}
+
+	private static void evaluateFromFile(String[] args, long startTime) {
+		Evaluation eval = new Evaluation();
+		eval.evaluateFromFile(args[1], args[2], Integer.valueOf(args[3]), args[4]);
 	}
 
 	private static void recommend(String[] args, long startTime) {

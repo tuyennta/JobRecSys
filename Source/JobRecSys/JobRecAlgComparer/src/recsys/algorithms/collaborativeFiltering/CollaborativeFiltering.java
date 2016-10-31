@@ -114,7 +114,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 		}
 	}
 
-	public HashMap<String, List<RecommendedItem>> recommend() {
+	public void recommend() {
 		int startIndex = 0;
 		if (isEstimate) {
 			startIndex = 1;
@@ -141,10 +141,40 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			break;
 		}
 		writeOutput(recommendedList);
-		if (!isRunningEvaluation)
+
+		if (!isRunningEvaluation) {
+			this.setupDBConnection("jobrectaskmanagement");
 			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
 					+ "', Status = 'Done' where TaskId = " + taskId);
-		
+		}
+	}
+
+	public HashMap<String, List<RecommendedItem>> getRecommendedList() {
+		int startIndex = 0;
+		if (isEstimate) {
+			startIndex = 1;
+		}
+		HashMap<String, List<RecommendedItem>> recommendedList = new HashMap<>();
+		int currentUser;
+		switch (config.getProperty("cf.type")) {
+		case "UserBased":
+			for (int i = startIndex; i < listUserIds.size(); i++) {
+				currentUser = listUserIds.get(i);
+				recommendedList.put(String.valueOf(currentUser), UserBased(currentUser));
+			}
+			break;
+		case "ItemBased":
+			for (int i = startIndex; i < listUserIds.size(); i++) {
+				currentUser = listUserIds.get(i);
+				recommendedList.put(String.valueOf(currentUser), ItemBased(currentUser));
+			}
+			break;
+		default:
+			log.error("Incorrect configuration file - cf.type");
+			updateDB("update task set ExecutionTime = '" + ((System.currentTimeMillis() - this.startTime) / 1000)
+					+ "', Status = 'Error' where TaskId = " + taskId);
+			break;
+		}
 		return recommendedList;
 	}
 
@@ -185,8 +215,9 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 	public List<RecommendedItem> UserBased(int userIDToRecommend) {
 		// initialize recommender
 		recommender = new GenericUserBasedRecommender(dataModel, userNeighborhood, userSimilarity);
+
 		try {
-			CachingRecommender cachingRecommender = new CachingRecommender(recommender);						
+			CachingRecommender cachingRecommender = new CachingRecommender(recommender);
 			return cachingRecommender.recommend(userIDToRecommend, topn, new IDRescorer() {
 				@Override
 				public double rescore(long userid, double originalSocre) {
@@ -312,12 +343,26 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			System.out.println("start writing data");
 			System.out.println("Users: " + listUserIds.size());
 			System.out.println("Recommend Users: " + recommendedList.keySet().size());
-			for (String userId : recommendedList.keySet()) {
-				for (RecommendedItem rec : recommendedList.get(userId)) {
-					wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-					System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-					wr.newLine();
+			if(this.isRunningEvaluation){				
+				for (String userId : recommendedList.keySet()) {
+					for (RecommendedItem rec : recommendedList.get(userId)) {
+						wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+						System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+						wr.newLine();
+					}
 				}
+			}else{
+				this.setupDBConnection("recsys");
+				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
+				for (String userId : recommendedList.keySet()) {
+					for (RecommendedItem rec : recommendedList.get(userId)) {
+						wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+						sql += "('cf'," + userId + "," + rec.getItemID() + "," + rec.getValue() + "),";
+						System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+						wr.newLine();
+					}
+				}
+				this.updateDB(sql.substring(0, sql.length() - 1));
 			}
 			wr.close();
 		} catch (IOException e) {
