@@ -1,9 +1,7 @@
 package recsys.algorithms.cbf;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +110,7 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 			public void run() {
 				try {
 					try {
+						
 						double val = getCosineSimilarityWithUserRating(userV, jobV);
 						System.out.println("Thread  " + threadId + "-- Job " + userid + " and User " + jobId + " " + val
 								+ " \t" + (countTask * 100.0d / size) + " %");
@@ -132,10 +131,10 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 			topNRecommendResult.put(j, cbTopN);
 			try {
 				Map<String, Double> v_user = getWieghts(reader, users.get(j));
-
-				RealVector v = toRealVector(v_user);
 				ArrayList<Integer> arrayList = rating.get(j);
-				if (arrayList != null) {
+				RealVector v = toRealVector(v_user);
+				ArrayList<Integer> arrayList_run = rating.get(j);
+				if (arrayList_run != null) {
 					for (int i : arrayList) {
 						Map<String, Double> p = getWieghts(reader, i);
 						RealVector vlike = toRealVector(p);
@@ -154,16 +153,34 @@ public class DocumentProcesser extends DocumentSimilarityTFIDF {
 				Map<String, Double> v_job = getWieghts(reader, jobs.get(i));
 				RealVector rvJob = toRealVector(v_job);
 				int vi_user = 0;
-
 				ExecutorService executor = Executors.newFixedThreadPool(numOfProcessors - 1);
 				for (String j : users.keySet()) {
-					UserTask rec = new UserTask();
-					rec.jobId = i;
-					rec.userid = j;
-					rec.jobV = rvJob;
-					rec.threadId = vi_user;
-					rec.userV = userVectors.get(vi_user++);
-					executor.submit(rec);
+					ArrayList<Integer> arrayList = rating.get(j);
+					if(arrayList != null)
+					{
+						if(!arrayList.contains(i)) 
+						{
+							UserTask rec = new UserTask();
+							rec.jobId = i;
+							rec.userid = j;
+							rec.jobV = rvJob;
+							rec.threadId = vi_user;
+							rec.userV = userVectors.get(vi_user++);
+							executor.submit(rec);						
+						}
+					}
+					else
+					{
+						
+						UserTask rec = new UserTask();
+						rec.jobId = i;
+						rec.userid = j;
+						rec.jobV = rvJob;
+						rec.threadId = vi_user;
+						rec.userV = userVectors.get(vi_user++);
+						executor.submit(rec);	
+					}
+
 				}
 				executor.shutdown();
 				while (!executor.isTerminated()) {

@@ -82,7 +82,6 @@ public class CB extends RecommendationAlgorithm {
 		log.info("Building item done");
 		dataSetReader = new DataSetReader(this.inputDirectory);
 		dataSetReader.open(DataSetType.Score);
-
 		if (this.isRunningEvaluation) {
 			trainModel();
 		} else {
@@ -120,7 +119,7 @@ public class CB extends RecommendationAlgorithm {
 			log.info("Close lucene reader");
 			log.info("Finish CB");
 		}
-		System.out.println("Return data size" + rs.size());
+		System.out.println("Return data size " + rs.size());
 		return rs;
 	}
 
@@ -181,6 +180,7 @@ public class CB extends RecommendationAlgorithm {
 						sql += "('cb', " + i + "," + job[k] + "," + (1.0d + ((score[k] / max) * 4.0d)) + "),";
 					}
 				}
+				System.out.println(sql.substring(0, sql.length() - 1));
 				this.updateDB(sql.substring(0, sql.length() - 1));
 			}
 
