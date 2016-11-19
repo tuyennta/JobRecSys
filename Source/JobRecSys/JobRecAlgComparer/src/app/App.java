@@ -19,27 +19,46 @@ public class App {
 		case "eval":
 			evaluate(args, startTime);
 			break;
-		default:
-			evaluateFromFile(args, startTime);
+		case "online_rec":
+			onlineRecommend(args, startTime);
+			break;
+		case "online_eval":
+			onlineEvaluate(args, startTime);
 			break;
 		}
 	}
 
-	private static void evaluateFromFile(String[] args, long startTime) {
+	private static void onlineEvaluate(String[] args, long startTime) {
 		Evaluation eval = new Evaluation();
-		eval.evaluateFromFile(args[1], args[2], Integer.valueOf(args[3]), args[4]);
+		eval.evaluateFromDB(args[1], Integer.valueOf(args[2]), Integer.valueOf(args[3]), args[4]);
 	}
 
 	private static void recommend(String[] args, long startTime) {
 		switch (args[1]) {
 		case "cf":
-			collaborativeFiltering(args[2], args[3], args[4], startTime);
+			collaborativeFiltering(args[2], args[3], args[4], false, startTime);
 			break;
 		case "cb":
-			contentBase(args[2], args[3], args[4], startTime);
+			contentBase(args[2], args[3], args[4], false, startTime);
 			break;
 		case "hb":
-			hybrid(args[2], args[3], args[4], startTime);
+			hybrid(args[2], args[3], args[4], false, startTime);
+			break;
+		default:
+			break;
+		}
+	}
+
+	private static void onlineRecommend(String[] args, long startTime) {
+		switch (args[1]) {
+		case "cf":
+			collaborativeFiltering(args[2], args[3], null, true, startTime);
+			break;
+		case "cb":
+			contentBase(args[2], args[3], null, true, startTime);
+			break;
+		case "hb":
+			hybrid(args[2], args[3], null, true, startTime);
 			break;
 		default:
 			break;
@@ -47,24 +66,28 @@ public class App {
 	}
 
 	private static void evaluate(String[] args, long startTime) {
-		Evaluation eval = new Evaluation(args[2], Integer.valueOf(args[3]), args[1], args[4], args[5], args[6], startTime);
+		Evaluation eval = new Evaluation(args[2], Integer.valueOf(args[3]), args[1], args[4], args[5], args[6],
+				startTime);
 		eval.evaluate();
 	}
 
-	private static void collaborativeFiltering(String input, String output, String taskId, long startTime) {
+	private static void collaborativeFiltering(String input, String output, String taskId, boolean writeToDB,
+			long startTime) {
 		CollaborativeFiltering cf = new CollaborativeFiltering(input, output, taskId, startTime);
+		cf.setWriteToDB(writeToDB);
 		cf.recommend();
 	}
 
-	private static void hybrid(String input, String output,String taskId, long startTime) {
+	private static void hybrid(String input, String output, String taskId, boolean writeToDB, long startTime) {
 		HybirdRecommeder hybridRecommender = new HybirdRecommeder(input, output, taskId, startTime);
 		hybridRecommender.init();
+		hybridRecommender.setWriteToDB(writeToDB);
 		hybridRecommender.run();
 	}
 
-	private static void contentBase(String input, String output, String taskId, long startTime) {
-
+	private static void contentBase(String input, String output, String taskId, boolean writeToDB, long startTime) {
 		CB cb = new CB(input, output, taskId, false, startTime);
+		cb.setWriteToDB(writeToDB);
 		try {
 			cb.run();
 		} catch (Exception ex) {

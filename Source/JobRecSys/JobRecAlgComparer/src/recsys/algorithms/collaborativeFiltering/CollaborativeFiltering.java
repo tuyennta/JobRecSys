@@ -351,7 +351,9 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 						wr.newLine();
 					}
 				}
-			}else{
+			}
+			if(this.isWriteToDB())
+			{
 				this.setupDBConnection("recsys");
 				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
 				for (String userId : recommendedList.keySet()) {
@@ -362,6 +364,7 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 						wr.newLine();
 					}
 				}
+				System.out.println(sql.substring(0, sql.length() - 1));
 				this.updateDB(sql.substring(0, sql.length() - 1));
 			}
 			wr.close();

@@ -20,6 +20,15 @@ public abstract class RecommendationAlgorithm {
 	protected boolean isRunningEvaluation;
 	protected int topn;
 	protected MysqlDBConnection mysqlConnection;
+	protected boolean writeToDB = false;
+
+	public boolean isWriteToDB() {
+		return writeToDB;
+	}
+
+	public void setWriteToDB(boolean writeToDB) {
+		this.writeToDB = writeToDB;
+	}
 
 	public boolean isRunningEvaluation() {
 		return isRunningEvaluation;

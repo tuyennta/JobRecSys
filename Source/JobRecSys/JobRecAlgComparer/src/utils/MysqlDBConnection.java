@@ -54,6 +54,7 @@ public class MysqlDBConnection {
 			return false;
 		} catch (SQLException e) {
 			log.error(e);
+			e.printStackTrace();
 			return false;
 		}
 		return true;

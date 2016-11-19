@@ -52,7 +52,8 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 						fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
 					}
 				}
-			} else {
+			}
+			if (this.isWriteToDB()) {
 				this.setupDBConnection("recsys");
 				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
 				for (String i : rss.keySet()) {
@@ -66,7 +67,7 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 						fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
 						sql += "('hb', " + i + "," + topNJobs.TopNjob[k] + "," + topNJobs.TopNscore[k] + "),";
 					}
-				}				
+				}
 				this.updateDB(sql.substring(0, sql.length() - 1));
 			}
 

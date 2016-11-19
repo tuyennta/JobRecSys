@@ -3,13 +3,13 @@ package recsys.evaluate;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+
 import org.apache.log4j.Logger;
 
 import recsys.algorithms.RecommendationAlgorithm;
@@ -17,6 +17,7 @@ import recsys.algorithms.cbf.CB;
 import recsys.algorithms.collaborativeFiltering.CollaborativeFiltering;
 import recsys.algorithms.hybird.HybirdRecommeder;
 import recsys.datapreparer.CollaborativeFilteringDataPreparer;
+import recsys.datapreparer.DataPreparer;
 import uit.se.evaluation.dtos.ScoreDTO;
 import uit.se.evaluation.metrics.AveragePrecision;
 import uit.se.evaluation.metrics.FMeasure;
@@ -46,8 +47,9 @@ public class Evaluation {
 	boolean isEstimate = false;
 	static Logger log = Logger.getLogger(Evaluation.class.getName());
 
-	public Evaluation(){}
-	
+	public Evaluation() {
+	}
+
 	public Evaluation(String evalType, int evalParam, String algorithm, String input, String evalDir, String taskId,
 			long startTime) {
 		this.algorithm = algorithm;
@@ -130,19 +132,22 @@ public class Evaluation {
 		writeResult(taskId, evaluationResult, true);
 	}
 
-	public void evaluateFromFile(String rankedListFile, String groundTruthFile, int truthRank, String taskId) {
-		HashMap<Integer, List<ScoreDTO>> groundTruth = DatasetUtil.getGroundTruth(groundTruthFile, truthRank);
-		HashMap<Integer, List<ScoreDTO>> rankList = DatasetUtil.getRankList(rankedListFile, truthRank);
+	public void evaluateFromDB(String algorithm, int truthRank, int topn, String outputFile) {
 
+		DataPreparer dp = new DataPreparer("");
+		dp.readEvaluationDataFromDB(algorithm, truthRank);
+		HashMap<Integer, List<ScoreDTO>> groundTruth = dp.getGroundTruth();
+		HashMap<Integer, List<ScoreDTO>> rankList = dp.getRankList();
 		/**
 		 * Fourth step: evaluation
 		 */
+		this.topN = topn;
 		HashMap<String, Double> evaluationResult = computeEvaluation(rankList, groundTruth);
 
 		/**
 		 * Fifth step: write result to DB
 		 */
-		writeResult(taskId, evaluationResult, true);
+		writeResult(evaluationResult, outputFile);
 	}
 
 	private void crossValidation() {
@@ -185,56 +190,6 @@ public class Evaluation {
 		writeResult(taskId, evaluationResult, true);
 	}
 
-	private long estimateCrossValidationTime() {
-
-		long startTime = 0;
-		long endTime = 0;
-		long runTime = 0;
-
-		startTime = System.currentTimeMillis();
-
-		CollaborativeFilteringDataPreparer dataPreparer = new CollaborativeFilteringDataPreparer(inputDir);
-		HashMap<String, Double> evaluationResult = null;
-
-		endTime = System.currentTimeMillis();
-		runTime += endTime - startTime;
-
-		/**
-		 * First step: preparing data, split training and testing data set
-		 */
-		startTime = System.currentTimeMillis();
-
-		dataPreparer.splitDataSet(0, evaluationParam, inputDir, evaluationDir);
-
-		endTime = System.currentTimeMillis();
-		runTime += endTime - startTime;
-
-		/**
-		 * Second step: call Algorithm execute on training data set
-		 */
-		estimateTrainingTime();
-		// runTime +=
-
-		/**
-		 * Third step: convert result to boolean type
-		 */
-		HashMap<Integer, List<ScoreDTO>> groundTruth = DatasetUtil.getGroundTruth(evaluationDir + "testing\\Score.txt",
-				truthRank);
-		HashMap<Integer, List<ScoreDTO>> rankList = DatasetUtil.getRankList(evaluationDir + "result\\Score.txt",
-				truthRank);
-
-		endTime = System.currentTimeMillis();
-		runTime += endTime - startTime;
-		/**
-		 * Four step: compute evaluation
-		 */
-		evaluationResult = updateEvaluationResult(evaluationResult, computeEvaluation(rankList, groundTruth));
-
-		endTime = System.currentTimeMillis();
-		return runTime += endTime - startTime;
-
-	}
-
 	private HashMap<String, Double> updateEvaluationResult(HashMap<String, Double> oldResult,
 			HashMap<String, Double> newResult) {
 		if (oldResult == null)
@@ -263,9 +218,7 @@ public class Evaluation {
 
 	private HashMap<String, Double> computeEvaluation(HashMap<Integer, List<ScoreDTO>> rankList,
 			HashMap<Integer, List<ScoreDTO>> groundTruth) {
-		double preTopN = 0;
-		double precision = 0;
-		double recall = 0;
+		double preTopN = 0;		
 		double recTopN = 0;
 		double f = 0;
 		double ndcgTopN = 0;
@@ -274,14 +227,11 @@ public class Evaluation {
 		double map = 0;
 		for (Integer userId : rankList.keySet()) {
 			preTopN += Precision.computePrecisionTopN(rankList.get(userId), groundTruth.get(userId), topN);
-			precision += Precision.computePrecision(rankList.get(userId), groundTruth.get(userId));
-			recall += Recall.computeRecall(rankList.get(userId), groundTruth.get(userId));
 			recTopN += Recall.computeRecallTopN(rankList.get(userId), groundTruth.get(userId), topN);
 			f += FMeasure.computeF1(rankList.get(userId), groundTruth.get(userId));
 			try {
 				ndcgTopN += NDCG.computeNDCG(rankList.get(userId), groundTruth.get(userId), topN);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			rmse += RMSE.computeRMSE(rankList.get(userId), groundTruth.get(userId));
@@ -295,8 +245,6 @@ public class Evaluation {
 		int n = rankList.size();
 		if (n != 0) {
 			preTopN /= n;
-			precision /= n;
-			recall /= n;
 			recTopN /= n;
 			f /= n;
 			ndcgTopN /= n;
@@ -305,8 +253,6 @@ public class Evaluation {
 			map /= n;
 		}
 		System.out.println("P@" + topN + ": " + preTopN);
-		System.out.println("P:" + precision);
-		System.out.println("R:" + recall);
 		System.out.println("R@" + topN + ": " + recTopN);
 		System.out.println("F:" + f);
 		System.out.println("NDCG@" + topN + ": " + ndcgTopN);
@@ -317,8 +263,6 @@ public class Evaluation {
 		System.out.println("-----------");
 
 		HashMap<String, Double> evaluationResult = new HashMap<>(evaluationParam);
-		evaluationResult.put("Precision", precision);
-		evaluationResult.put("Recall", recall);
 		evaluationResult.put("P@" + topN, preTopN);
 		evaluationResult.put("R@" + topN, recTopN);
 		evaluationResult.put("F1", f);
@@ -329,6 +273,26 @@ public class Evaluation {
 
 		return evaluationResult;
 
+	}
+
+	private void writeResult(HashMap<String, Double> evaluationResult, String file) {
+		/* Create file */
+		File commandFile = new File(file);
+		if (!commandFile.exists()) {
+			try {
+				commandFile.createNewFile();
+				FileWriter fw = new FileWriter(commandFile.getAbsoluteFile());
+				BufferedWriter bw = new BufferedWriter(fw);
+				for (String key : evaluationResult.keySet()) {
+					bw.write(key + "\t" + evaluationResult.get(key) + "\n");
+				}
+				bw.close();
+				fw.close();
+			} catch (IOException e) {
+				log.error(e);
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void writeResult(String taskId, HashMap<String, Double> evaluationResult, boolean writeToFile) {
@@ -353,7 +317,7 @@ public class Evaluation {
 		}
 
 		try {
-			MysqlDBConnection con = new MysqlDBConnection("dbconfig.properties");
+			MysqlDBConnection con = new MysqlDBConnection("jobrectaskmanagement.properties");
 			if (con.connect()) {
 				String sql = "INSERT INTO `evaluation`(`TaskId`, `Score`, `Metric`) VALUES ";
 				for (String key : evaluationResult.keySet()) {
@@ -389,23 +353,6 @@ public class Evaluation {
 		default:
 			break;
 		}
-	}
-
-	private HashMap<Long, RecommendationAlgorithm> estimateTrainingTime() {
-		isEstimate = true;
-		switch (algorithm) {
-		case "cf":
-			return estimateTrainCFTime();
-		case "cb":
-			trainCB();
-			break;
-		case "hb":
-			trainHB();
-			break;
-		default:
-			break;
-		}
-		return null;
 	}
 
 	private void trainHB() {
@@ -455,16 +402,5 @@ public class Evaluation {
 			CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
 			cf.recommend();
 		}
-	}
-
-	private HashMap<Long, RecommendationAlgorithm> estimateTrainCFTime() {
-		long initModelTime = 0;
-		long tStart = System.currentTimeMillis();
-		CollaborativeFiltering cf = new CollaborativeFiltering(evaluationDir, config, taskId, startTime);
-		long tEnd = System.currentTimeMillis();
-		initModelTime = tEnd - tStart;
-		HashMap<Long, RecommendationAlgorithm> returnMap = new HashMap<>();
-		returnMap.put(cf.estimateRecommendationTime(initModelTime), cf);
-		return returnMap;
 	}
 }

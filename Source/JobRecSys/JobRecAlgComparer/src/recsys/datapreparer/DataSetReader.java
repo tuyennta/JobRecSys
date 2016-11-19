@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 import dto.CvDTO;
 import dto.JobDTO;
 import dto.ScoreDTO;
-import recsys.evaluate.Evaluation;
 
 public class DataSetReader {
 	static Logger log = Logger.getLogger(DataSetReader.class.getName());

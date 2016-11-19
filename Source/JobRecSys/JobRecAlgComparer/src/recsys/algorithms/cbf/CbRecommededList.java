@@ -1,7 +1,6 @@
 package recsys.algorithms.cbf;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class CbRecommededList {
 	private ArrayList<String> jobIdList = new ArrayList<String>();

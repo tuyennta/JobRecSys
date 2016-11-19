@@ -167,7 +167,9 @@ public class CB extends RecommendationAlgorithm {
 						fw.append(i + "\t" + job[k] + "\t" + (1.0d + ((score[k] / max) * 4.0d)) + "\r\n");
 					}
 				}
-			} else {
+			}
+			if(this.isWriteToDB())
+			{
 				this.setupDBConnection("recsys");
 				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
 				for (String i : rss.keySet()) {
