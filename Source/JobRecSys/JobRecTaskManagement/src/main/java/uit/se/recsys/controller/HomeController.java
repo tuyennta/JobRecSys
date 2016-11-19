@@ -9,10 +9,9 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
-
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import uit.se.recsys.bean.TaskBean;
 import uit.se.recsys.bean.TaskCFBean;
@@ -167,7 +167,38 @@ public class HomeController {
     
     @RequestMapping(value="trang-chu/updateTask", method=RequestMethod.POST, produces="application/json")
     @ResponseBody
-    public HashMap<Integer, String> updateTask(){
+    public HashMap<Integer, String> updateTask(HttpSession session, ModelAndView model){
+	/* Check logged in user */
+	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
+	    model.setViewName("redirect:/dang-nhap");
+	}
+	
 	return taskBO.getTaskStatus("rec");
+    }
+    
+    @RequestMapping(value={"/xoa","trang-chu/xoa"}, method=RequestMethod.GET)    
+    public String deleteTask(HttpSession session, Model model, @RequestParam String taskid){
+	/* Check logged in user */
+	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
+	    return "redirect:/dang-nhap";
+	}	
+	
+	//delete task from files
+	TaskBean task = taskBO.getTaskById(Integer.valueOf(taskid));
+	String path = ROOT_PATH + task.getUserId() + File.separator
+			+ task.getDataset() + "\\output\\" + taskid + "_" + task.getTaskName() + "\\";
+	try {
+	    FileUtils.forceDelete(new File(path));
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	
+	//delete task from database
+	taskBO.deleteTask(taskid);
+	
+	//binding data again
+	bindingData(model);
+	
+	return "home";
     }
 }

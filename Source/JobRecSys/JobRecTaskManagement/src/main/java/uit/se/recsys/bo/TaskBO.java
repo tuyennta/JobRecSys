@@ -1,5 +1,9 @@
 package uit.se.recsys.bo;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +36,15 @@ public class TaskBO {
     public HashMap<Integer, String> getTaskStatus(String taskType) {
 	return taskDAO.getTaskStatus(taskType);
     }
+    
+    public void deleteTask(String taskId) {
+	taskDAO.deleteEvaluationForTask(taskId);
+	taskDAO.deleteTask(taskId);
+    }
+    
+    public boolean checkIfDatasetIsUsing(String dsname){
+	return taskDAO.checkIfDatasetIsUsing(dsname);
+    }
 
     public TaskBean getTaskById(int id) {
 	return taskDAO.getTaskById(id);
@@ -40,18 +53,65 @@ public class TaskBO {
     public int generateId() {
 	return taskDAO.generateId();
     }
+    
+    public HashMap<String, List<RowInfoBean>> getRowInfosFromFile(String fileLocation) {
+	HashMap<String, List<RowInfoBean>> maps = new HashMap<>();
+	maps.put("CF", getRowInfo(fileLocation + "cf_online_evaluation.txt", "CF"));
+	maps.put("CB", getRowInfo(fileLocation + "cb_online_evaluation.txt", "CB"));
+	maps.put("HB", getRowInfo(fileLocation + "hb_online_evaluation.txt", "HB"));
+	
+	return maps;
+    }
+    
+    public boolean checkIfHaveResult(String fileName){
+	File file = new File(fileName);
+	if(file.exists())
+	    return true;
+	return false;
+    }
+    
+    public List<RowInfoBean> getRowInfo(String fileName, String displayName){
+	List<RowInfoBean> listRows = new ArrayList<>();
+	
+	File file = new File(fileName);
+	try {
+	    BufferedReader br = new BufferedReader(new FileReader(file));
+	    String currentLine = "";
+	    RowInfoBean rb = new RowInfoBean();
+	    List<Float> scores = new ArrayList<>();
+	    while((currentLine = br.readLine())!=null){
+		scores.add(Float.NaN);
+		scores.add(Float.NaN);
+		scores.add(Float.valueOf(currentLine.substring(currentLine.indexOf("\t") + 1)));
+	    }
+	    rb.setScores(scores);
+	    rb.setDataset("job_vi");
+	    rb.setDisplayName(displayName);
+	    rb.setSheetName(displayName);
+	    listRows.add(rb);
+	    br.close();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	
+	return listRows;
+    }
 
-    public HashMap<String, List<RowInfoBean>> getRowInfos() {
+    /**
+     * function get all tasks prepared to binding into excel file
+     * @return
+     */
+    public HashMap<String, List<RowInfoBean>> getRowInfosFromDB() {
 	List<TaskBean> tasks = taskDAO.getEvaluationTasks();
 	HashMap<String, List<RowInfoBean>> maps = new HashMap<>();
 	List<RowInfoBean> cFRows = new ArrayList<>();
 	List<RowInfoBean> cBRows = new ArrayList<>();
 	List<RowInfoBean> hBRows = new ArrayList<>();
-	RowInfoBean row = null;
+	RowInfoBean rowBean = null;
 	HashMap<Integer, TaskBean> rowTask = null;
 	List<Integer> ignoreTasks = new ArrayList<>();
 	for (int i = 0; i < tasks.size(); i++) {
-	    row = new RowInfoBean();
+	    rowBean = new RowInfoBean();
 	    rowTask = new HashMap<>();
 	    if (ignoreTasks.contains(i)) {
 		continue;
@@ -85,9 +145,9 @@ public class TaskBO {
 		    rowTask.put(15, tmp);
 		}
 	    }
-	    row.setDisplayName(task.getDisplayName());
-	    row.setSheetName(task.getAlgorithm().toUpperCase() + " - " + task.getDataset().toUpperCase());
-	    row.setDataset(task.getDataset());
+	    rowBean.setDisplayName(task.getDisplayName());
+	    rowBean.setSheetName(task.getAlgorithm().toUpperCase() + " - " + task.getDataset().toUpperCase());
+	    rowBean.setDataset(task.getDataset());
 	    List<Float> scores = new ArrayList<>();
 
 	    addScore(rowTask, scores, "P@");
@@ -98,16 +158,16 @@ public class TaskBO {
 	    addScore(rowTask, scores, "MRR");
 	    addScore(rowTask, scores, "MAP");
 
-	    row.setScores(scores);
+	    rowBean.setScores(scores);
 	    switch (task.getAlgorithm()) {
 	    case "cf":
-		cFRows.add(row);
+		cFRows.add(rowBean);
 		break;
 	    case "cb":
-		cBRows.add(row);
+		cBRows.add(rowBean);
 		break;
 	    case "hb":
-		hBRows.add(row);
+		hBRows.add(rowBean);
 		break;
 	    default:
 		break;

@@ -70,51 +70,6 @@
 			<div class="panel-group">
 				<div class="panel panel-primary">
 					<div class="panel-heading" data-toggle="collapse"
-						data-target="#panel-content">
-						<label class="text-uppercase">Trạng thái tasks</label>
-					</div>
-					<div id="panel-content" class="panel-collapse collapse in">
-						<div class="panel-body">
-							<table class="table table-hover">
-								<thead>
-									<tr>
-										<th>STT</th>
-										<th>Tên task</th>
-										<th>Ngày tạo</th>
-										<th>Thuật toán</th>
-										<th>Dataset</th>
-										<th>Trạng thái</th>
-									</tr>
-								</thead>
-								<tbody>
-									<%
-										List<TaskBean> listTask = (List<TaskBean>) request.getAttribute("listTask");
-										int count = 1;
-										for (TaskBean task : listTask) {
-											out.write("<tr>");
-											out.write("<td>" + count++ + "</td>");
-											out.write("<td><a href='" + request.getContextPath() + "/ket-qua-thuat-toan?taskid= " + task.getTaskId() + "'>"
-													+ task.getTaskName() + "</a></td>");
-											out.write("<td>" + task.getTimeCreate() + "</td>");
-											String tooltip = "";
-											for (String key : task.getConfig().stringPropertyNames()) {
-												tooltip += key + "=" + task.getConfig().getProperty(key) + "\n";
-											}
-											out.write("<td><a href='#' title='" + tooltip);
-											out.write("' data-toggle='tooltip'>" + task.getAlgorithm() + "</a></td>");
-											out.write("<td>" + task.getDataset() + "</td>");
-											out.write("<td>" + "<p class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</p></td>");
-										}
-									%>									
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-
-
-				<div class="panel panel-primary">
-					<div class="panel-heading" data-toggle="collapse"
 						data-target="#panel-content2">
 						<label class="text-uppercase">Tạo task mới</label>
 					</div>
@@ -166,6 +121,55 @@
 						</div>
 					</div>
 				</div>
+				
+				<div class="panel panel-primary">
+					<div class="panel-heading" data-toggle="collapse"
+						data-target="#panel-content">
+						<label class="text-uppercase">Trạng thái tasks</label>
+					</div>
+					<div id="panel-content" class="panel-collapse collapse in">
+						<div class="panel-body">
+							<table class="table table-hover">
+								<thead>
+									<tr>
+										<th>STT</th>
+										<th>Tên task</th>
+										<th>Ngày tạo</th>
+										<th>Thuật toán</th>
+										<th>Dataset</th>
+										<th>Trạng thái</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									<%
+										List<TaskBean> listTask = (List<TaskBean>) request.getAttribute("listTask");
+										int count = 1;
+										for (TaskBean task : listTask) {
+											out.write("<tr>");
+											out.write("<td>" + count++ + "</td>");
+											out.write("<td><a href='" + request.getContextPath() + "/ket-qua-thuat-toan?taskid= " + task.getTaskId() + "'>"
+													+ task.getTaskName() + "</a></td>");
+											out.write("<td>" + task.getTimeCreate() + "</td>");
+											String tooltip = "";
+											for (String key : task.getConfig().stringPropertyNames()) {
+												tooltip += key + "=" + task.getConfig().getProperty(key) + "\n";
+											}
+											out.write("<td><a href='#' title='" + tooltip);
+											out.write("' data-toggle='tooltip'>" + task.getAlgorithm() + "</a></td>");
+											out.write("<td>" + task.getDataset() + "</td>");
+											out.write("<td>" + "<p class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</p></td>");
+											out.write("<td><a href='" + request.getContextPath() + "/xoa?taskid=" + task.getTaskId() + "' class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
+										}
+									%>									
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+
+				
 			</div>
 		</div>
 	</div>

@@ -4,10 +4,12 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import uit.se.recsys.bo.TaskBO;
 import uit.se.recsys.utils.DatasetUtil;
 import uit.se.recsys.utils.SecurityUtil;
 
@@ -23,12 +26,18 @@ public class DatasetManagementController {
     @Value("${Dataset.Location}")
     private String ROOT_PATH;
 
+    @Autowired
+    private TaskBO taskBO;
+
     @RequestMapping(value = "/quan-ly-dataset", method = RequestMethod.GET)
     public String init(Model model, HttpSession session) {
 	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
 	    return "redirect:/dang-nhap";
 	} else {
-	    model.addAttribute("datasets", new DatasetUtil().getDatasets(ROOT_PATH + SecurityUtil.getInstance().getUserId()));
+	    model.addAttribute("datasets",
+			    new DatasetUtil().getDatasets(ROOT_PATH
+					    + SecurityUtil.getInstance()
+							    .getUserId()));
 	    return "datasetManagement";
 	}
     }
@@ -42,9 +51,42 @@ public class DatasetManagementController {
 	    return "redirect:/dang-nhap";
 	} else {
 	    model.addAttribute("message", saveDataset(files, datasetName));
-	    model.addAttribute("datasets", new DatasetUtil().getDatasets(ROOT_PATH + SecurityUtil.getInstance().getUserId()));
+	    model.addAttribute("datasets",
+			    new DatasetUtil().getDatasets(ROOT_PATH
+					    + SecurityUtil.getInstance()
+							    .getUserId()));
 	    return "datasetManagement";
 	}
+    }
+
+    @RequestMapping(value = "/xoa-dataset", method = RequestMethod.GET)
+    public String deleteDataset(HttpSession session, Model model,
+				@RequestParam String dsname) {
+	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
+	    return "redirect:/dang-nhap";
+	}
+
+	// check if dataset is using
+	if (taskBO.checkIfDatasetIsUsing(dsname)) {
+	    model.addAttribute("noti",
+			    "Dataset này đang được sử dụng không thể xóa, vui lòng xóa các task sử dụng dataset này trước!");
+	} else {
+
+	    // delete
+	    try {
+		FileUtils.forceDelete(new File(ROOT_PATH
+				+ SecurityUtil.getInstance().getUserId() + "\\"
+				+ dsname));
+	    } catch (IOException e) {
+		e.printStackTrace();
+	    }
+	}
+
+	// show the others datasets
+	model.addAttribute("datasets", new DatasetUtil().getDatasets(
+			ROOT_PATH + SecurityUtil.getInstance().getUserId()));	
+
+	return "datasetManagement";
     }
 
     private String saveDataset(MultipartFile[] files, String datasetName) {
@@ -59,7 +101,7 @@ public class DatasetManagementController {
 					    + File.separator + "input");
 	    if (!dIn.exists()) {
 		dIn.mkdirs();
-	    }	    
+	    }
 
 	    /* Loop through files and save it */
 	    for (int i = 0; i < 3; i++) {

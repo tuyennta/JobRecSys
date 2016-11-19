@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -122,6 +123,32 @@ public class EvaluationController {
     @ResponseBody
     public HashMap<Integer, String> updateTask(){
 	return taskBO.getTaskStatus("eval");
+    }
+    
+    @RequestMapping(value={"/xoa-danh-gia"}, method=RequestMethod.GET)    
+    public String deleteTask(HttpSession session, Model model, @RequestParam String taskid){
+	/* Check logged in user */
+	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
+	    return "redirect:/dang-nhap";
+	}	
+	
+	//delete task from files
+	TaskBean task = taskBO.getTaskById(Integer.valueOf(taskid));
+	String path = ROOT_PATH + task.getUserId() + File.separator
+			+ task.getDataset() + "\\evaluation\\" + taskid + "_" + task.getTaskName() + "\\";
+	try {
+	    FileUtils.forceDelete(new File(path));
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	
+	//delete task from database
+	taskBO.deleteTask(taskid);
+	
+	//binding data again
+	bindingData(model);
+	
+	return "evaluation";
     }
     
     private void saveUploadFile(String path, String name, MultipartFile file){

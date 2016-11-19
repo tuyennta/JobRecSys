@@ -137,12 +137,20 @@
 					</div>
 					<div id="panel-content" class="panel-collapse collapse in">
 						<div class="panel-body">
+
+							<%
+								String noti = (String) request.getAttribute("noti");
+								if (noti != null) {
+									out.print("<p class='bg-danger'>" + noti + "</p>");
+								}
+							%>
 							<table class="table table-hover">
 								<thead>
 									<tr>
 										<th>STT</th>
 										<th>Tên dataset</th>
 										<th>Xem thống kê</th>
+										<th></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -153,7 +161,9 @@
 												out.write("<tr>");
 												out.write("<td>" + i + "</td>");
 												out.write("<td>" + datasets[i - 1] + "</td>");
-												out.write("<td><a href='#'>Xem thống kê</a></td>");
+												out.write("<td><a href=" + request.getContextPath() + "/thong-ke-du-lieu> Xem thống kê</a></td>");
+												out.write("<td><a href='" + request.getContextPath() + "/xoa-dataset?dsname=" + datasets[i - 1]
+														+ "' class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
 												out.write("<tr>");
 											}
 										}

@@ -183,6 +183,65 @@ public class TaskDAO {
 	}
     }
 
+    /**
+     * function delete a task by taskid
+     * 
+     * @param taskId
+     */
+    public void deleteTask(String taskId) {
+	String sql = "delete from task where TaskId = ?";
+
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    stm.setString(1, taskId);
+	    stm.executeUpdate();
+	    stm.close();
+	    connection.close();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    /**
+     * function delete a task by taskid
+     * 
+     * @param taskId
+     */
+    public void deleteEvaluationForTask(String taskId) {
+	String sql = "delete from evaluation where TaskId = ?";
+
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    stm.setString(1, taskId);
+	    stm.executeUpdate();
+	    stm.close();
+	    connection.close();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    public boolean checkIfDatasetIsUsing(String dsname) {
+	String sql = "select * from task where Dataset= ?";
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    stm.setString(1, dsname);
+	    ResultSet rs = stm.executeQuery();
+	    if (rs.next()) {
+		stm.close();
+		connection.close();
+		return true;
+	    }
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	}
+
+	return false;
+    }
+
     private List<MetricBean> getMetricOfTask(int taskId) {
 	List<MetricBean> metrics = new ArrayList<MetricBean>();
 	String sql = "select Metric, Score from evaluation, task where task.TaskId = evaluation.TaskId and task.TaskId = "
