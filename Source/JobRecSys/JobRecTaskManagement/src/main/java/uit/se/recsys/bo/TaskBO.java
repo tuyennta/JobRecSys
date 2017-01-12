@@ -25,12 +25,12 @@ public class TaskBO {
 	return taskDAO.addTask(task);
     }
 
-    public List<TaskBean> getAllRecommendationTasks() {
-	return taskDAO.getRecommendationTasks();
+    public List<TaskBean> getAllRecommendationTasks(String userId) {
+	return taskDAO.getRecommendationTasks(userId);
     }
 
-    public List<TaskBean> getAllEvaluationTasks() {
-	return taskDAO.getEvaluationTasks();
+    public List<TaskBean> getAllEvaluationTasks(String userId) {
+	return taskDAO.getEvaluationTasks(userId);
     }
 
     public HashMap<Integer, String> getTaskStatus(String taskType) {
@@ -79,9 +79,7 @@ public class TaskBO {
 	    String currentLine = "";
 	    RowInfoBean rb = new RowInfoBean();
 	    List<Float> scores = new ArrayList<>();
-	    while((currentLine = br.readLine())!=null){
-		scores.add(Float.NaN);
-		scores.add(Float.NaN);
+	    while((currentLine = br.readLine())!=null){		
 		scores.add(Float.valueOf(currentLine.substring(currentLine.indexOf("\t") + 1)));
 	    }
 	    rb.setScores(scores);
@@ -101,8 +99,8 @@ public class TaskBO {
      * function get all tasks prepared to binding into excel file
      * @return
      */
-    public HashMap<String, List<RowInfoBean>> getRowInfosFromDB() {
-	List<TaskBean> tasks = taskDAO.getEvaluationTasks();
+    public HashMap<String, List<RowInfoBean>> getRowInfosFromDB(String userId) {
+	List<TaskBean> tasks = taskDAO.getEvaluationTasks(userId);
 	HashMap<String, List<RowInfoBean>> maps = new HashMap<>();
 	List<RowInfoBean> cFRows = new ArrayList<>();
 	List<RowInfoBean> cBRows = new ArrayList<>();

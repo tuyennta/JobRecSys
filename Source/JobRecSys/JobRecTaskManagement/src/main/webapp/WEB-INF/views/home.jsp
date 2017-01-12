@@ -146,7 +146,7 @@
 										List<TaskBean> listTask = (List<TaskBean>) request.getAttribute("listTask");
 										int count = 1;
 										for (TaskBean task : listTask) {
-											out.write("<tr>");
+											out.write("<tr id='task"+task.getTaskId()+"'>");
 											out.write("<td>" + count++ + "</td>");
 											out.write("<td><a href='" + request.getContextPath() + "/ket-qua-thuat-toan?taskid= " + task.getTaskId() + "'>"
 													+ task.getTaskName() + "</a></td>");
@@ -159,7 +159,8 @@
 											out.write("' data-toggle='tooltip'>" + task.getAlgorithm() + "</a></td>");
 											out.write("<td>" + task.getDataset() + "</td>");
 											out.write("<td>" + "<p class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</p></td>");
-											out.write("<td><a href='" + request.getContextPath() + "/xoa?taskid=" + task.getTaskId() + "' class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
+											out.write("<td><a href='#/' onclick=\"deleteTask('" + task.getTaskId()
+											+ "');\" class='glyphicon glyphicon-remove' style='color:red;'></a></td></tr>");
 										}
 									%>									
 								</tbody>

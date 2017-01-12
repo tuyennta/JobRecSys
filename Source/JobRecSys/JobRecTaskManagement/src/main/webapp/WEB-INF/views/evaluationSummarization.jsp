@@ -72,14 +72,14 @@
 		<div class="row" style="margin: 0 auto;">
 			<div class="panel-group">
 				<div class="panel panel-primary">
-					<div class="panel-heading" data-toggle="collapse"
-						data-target="#panel-content2">
+					<div class="panel-heading">
 						<label class="text-uppercase">Tổng hợp kết quả đánh giá
 							${type }</label> <a href="<%=request.getContextPath()%>/tong-hop.tai-ve"
 							class='btn btn-danger pull-right'><span
 							class='glyphicon glyphicon-download-alt'></span> Tải file kết quả</a>
 					</div>
-					<div id="panel-content2" class="panel-collapse collapse in">
+
+					<div id="panel-content2" style='display: ${display1};'>
 						<div class="panel-body">
 							<%
 								String noti = (String) request.getAttribute("noti");
@@ -87,7 +87,7 @@
 									out.write("<p class='bg-danger'>" + noti + "</p>");
 								}
 							%>
-							<div class="table-responsive">
+							<div class="table-responsive" style="height:400px; overflow-y: scroll;">
 								<table class="table table-striped table-bordered table-hover">
 									<col>
 									<colgroup span="3"></colgroup>
@@ -150,6 +150,50 @@
 							</div>
 						</div>
 					</div>
+
+					<div id="panel-content2" style='display: ${display2};'>
+						<div class="panel-body">
+							<%
+								if (noti != null) {
+									out.write("<p class='bg-danger'>" + noti + "</p>");
+								}
+							%>
+							<div class="table-responsive">
+								<table class="table table-striped table-bordered table-hover">
+									<col>
+									<colgroup span="1"></colgroup>
+									<colgroup span="1"></colgroup>
+									<colgroup span="1"></colgroup>
+									<colgroup span="1"></colgroup>
+									<tr>
+										<td rowspan="1"></td>
+										<th colspan="1" scope="colgroup">Precision</th>
+										<th colspan="1" scope="colgroup">NDCG</th>
+										<th colspan="1" scope="colgroup">RMSE</th>
+										<th colspan="1" scope="colgroup">MRR</th>
+										<th colspan="1" scope="colgroup">MAP</th>
+									</tr>
+									<%
+										if (rowInfos != null)
+											for (String key : rowInfos.keySet()) {
+												for (RowInfoBean row : rowInfos.get(key)) {
+													out.write("<tr>");
+													out.write("<th scope='row'>" + row.getDisplayName() + "</th>");
+													for (Float score : row.getScores()) {
+														if (!score.isNaN())
+															out.write("<td>" + score + "</td>");
+														else
+															out.write("<td></td>");
+													}
+													out.write("</tr>");
+												}
+											}
+									%>
+								</table>
+							</div>
+						</div>
+					</div>
+
 				</div>
 			</div>
 		</div>

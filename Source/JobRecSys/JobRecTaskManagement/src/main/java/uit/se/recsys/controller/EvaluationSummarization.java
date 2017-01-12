@@ -3,7 +3,6 @@ package uit.se.recsys.controller;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,26 +14,18 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-
 import uit.se.recsys.bean.RowInfoBean;
-import uit.se.recsys.bean.TaskBean;
 import uit.se.recsys.bo.TaskBO;
 import uit.se.recsys.utils.SecurityUtil;
 
@@ -54,10 +45,14 @@ public class EvaluationSummarization {
 	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
 	    return "redirect:/dang-nhap";
 	}
+	
+	String userId = String.valueOf(SecurityUtil.getInstance().getUserId());
 
-	HashMap<String, List<RowInfoBean>> maps = taskBO.getRowInfosFromDB();
+	HashMap<String, List<RowInfoBean>> maps = taskBO.getRowInfosFromDB(userId);
 	model.addAttribute("rowInfos", maps);
 	model.addAttribute("type", "offline");
+	model.addAttribute("display1", "block");
+	model.addAttribute("display2", "none");
 	createExcelFile(maps);
 	return "evaluationSummarization";
     }
@@ -90,11 +85,14 @@ public class EvaluationSummarization {
 				.getRowInfosFromFile(path);
 		model.addAttribute("rowInfos", maps);
 		createExcelFile(maps);   
+		createExcelFile(maps);
 	}else{
 	    model.addAttribute("noti", "Đang chạy đánh giá, vui lòng đợi!");
 	}
 	
 	model.addAttribute("type", "online");
+	model.addAttribute("display1", "none");
+	model.addAttribute("display2", "block");
 	return "evaluationSummarization";
     }
 

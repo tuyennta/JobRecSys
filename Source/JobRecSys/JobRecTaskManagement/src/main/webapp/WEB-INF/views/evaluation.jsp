@@ -177,7 +177,7 @@
 										List<TaskBean> listTask = (List<TaskBean>) request.getAttribute("listTask");
 										int count = 1;
 										for (TaskBean task : listTask) {
-											out.write("<tr>");
+											out.write("<tr id = 'task" + task.getTaskId() + "'>");
 											out.write("<td>" + count++ + "</td>");
 											out.write("<td><a href='" + request.getContextPath() + "/ket-qua-danh-gia?taskid= " + task.getTaskId()
 													+ "'>" + task.getTaskName() + "</a></td>");
@@ -192,8 +192,9 @@
 											out.write("<td>" + task.getEvaluationType() + "</td>");
 											out.write(
 													"<td>" + "<p class='status' id='t" + task.getTaskId() + "'>" + task.getStatus() + "</p></td>");
-											out.write("<td><a href='" + request.getContextPath() + "/xoa-danh-gia?taskid=" + task.getTaskId()
-													+ "' class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
+											out.write("<td><a href='#/' onclick=\"deleteTask('" + task.getTaskId()
+													+ "');\" class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
+											out.write("</tr>");
 										}
 									%>
 								</tbody>
@@ -213,12 +214,14 @@
 								<div class='col-md-6 center-block'>
 									<a target="_blank"
 										href="<%=request.getContextPath()%>/tong-hop-danh-gia-online"
-										class='btn btn-primary center-block'>Kết quả đánh giá online</a>
+										class='btn btn-primary center-block'>Kết quả đánh giá
+										online</a>
 								</div>
 								<div class='col-md-6 center-block'>
 									<a target="_blank"
 										href="<%=request.getContextPath()%>/tong-hop-danh-gia-offline"
-										class='btn btn-danger center-block'>Kết quả đánh giá offline</a>
+										class='btn btn-danger center-block'>Kết quả đánh giá
+										offline</a>
 								</div>
 							</div>
 						</div>

@@ -34,6 +34,7 @@
 		<div class="row" style="margin: 0 auto;">
 			<div class="col-md-3"></div>
 			<div class="col-md-6">
+				<lable class='text-danger'>${ mess}</lable>
 				<div class="panel panel-primary ${user.changePasswordCode != 0 ? 'hiden' : '' }">
 					<div class="panel-heading">
 						<label class="text-uppercase" style="text-align: center;">Đổi mật khẩu</label>
@@ -82,7 +83,7 @@
 							</div>
 							<div class="form-group">
 								<label for="changePasswordCode">Mã xác thực:</label>
-								<form:input path="changePasswordCode" type="text" required="required"
+								<form:input path="changePasswordCode" type="password" required="required"
 									class="form-control" id="changePasswordCode" />
 								<i class="text-danger" id="noti_changePasswordCode"></i>
 								<form:errors path="changePasswordCode" cssClass="error"></form:errors>

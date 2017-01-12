@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -78,12 +79,14 @@ public class DataPreparer {
 					if (lastAccount != 0 && lastAccount != accountID) {
 						List<uit.se.evaluation.dtos.ScoreDTO> r = new ArrayList<>();
 						r.addAll(ranks);
+						r.sort(Comparator.comparing(uit.se.evaluation.dtos.ScoreDTO::getScore).reversed());
 						rankList.put(lastAccount, r);
 						ranks.clear();
 
 						if (scores.size() != 0) {
 							List<uit.se.evaluation.dtos.ScoreDTO> s = new ArrayList<>();
 							s.addAll(scores);
+							s.sort(Comparator.comparing(uit.se.evaluation.dtos.ScoreDTO::getScore).reversed());
 							groundTruth.put(lastAccount, s);
 							scores.clear();
 						}

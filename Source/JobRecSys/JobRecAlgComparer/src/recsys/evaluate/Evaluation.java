@@ -142,7 +142,7 @@ public class Evaluation {
 		 * Fourth step: evaluation
 		 */
 		this.topN = topn;
-		HashMap<String, Double> evaluationResult = computeEvaluation(rankList, groundTruth);
+		HashMap<String, Double> evaluationResult = computeOnlineEvaluation(rankList, groundTruth);
 
 		/**
 		 * Fifth step: write result to DB
@@ -266,6 +266,55 @@ public class Evaluation {
 		evaluationResult.put("P@" + topN, preTopN);
 		evaluationResult.put("R@" + topN, recTopN);
 		evaluationResult.put("F1", f);
+		evaluationResult.put("NDCG@" + topN, ndcgTopN);
+		evaluationResult.put("RMSE", rmse);
+		evaluationResult.put("MRR", mrr);
+		evaluationResult.put("MAP", map);
+
+		return evaluationResult;
+
+	}
+	
+	private HashMap<String, Double> computeOnlineEvaluation(HashMap<Integer, List<ScoreDTO>> rankList,
+			HashMap<Integer, List<ScoreDTO>> groundTruth) {
+		double preTopN = 0;		
+		double ndcgTopN = 0;
+		double rmse = 0;
+		double mrr = 0;
+		double map = 0;
+		for (Integer userId : rankList.keySet()) {
+			preTopN += Precision.computePrecisionTopN(rankList.get(userId), groundTruth.get(userId), topN);			
+			try {
+				ndcgTopN += NDCG.computeNDCG(rankList.get(userId), groundTruth.get(userId), topN);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			rmse += RMSE.computeRMSE(rankList.get(userId), groundTruth.get(userId));
+			try {
+				mrr += ReciprocalRank.computeRR(rankList.get(userId), groundTruth.get(userId));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			map += AveragePrecision.computeAP(rankList.get(userId), groundTruth.get(userId));
+		}
+		int n = rankList.size();
+		if (n != 0) {
+			preTopN /= n;
+			ndcgTopN /= n;
+			rmse /= n;
+			mrr /= n;
+			map /= n;
+		}
+		System.out.println("P@" + topN + ": " + preTopN);
+		System.out.println("NDCG@" + topN + ": " + ndcgTopN);
+		System.out.println("RMSE:" + rmse);
+		System.out.println("MRR:" + mrr);
+		System.out.println("MAP:" + map);
+
+		System.out.println("-----------");
+
+		HashMap<String, Double> evaluationResult = new HashMap<>(evaluationParam);
+		evaluationResult.put("P@" + topN, preTopN);
 		evaluationResult.put("NDCG@" + topN, ndcgTopN);
 		evaluationResult.put("RMSE", rmse);
 		evaluationResult.put("MRR", mrr);

@@ -58,12 +58,13 @@ public class TaskDAO {
 	return false;
     }
 
-    public List<TaskBean> getRecommendationTasks() {
-	String sql = "select * from task where TaskType = 'rec'";
+    public List<TaskBean> getRecommendationTasks(String userId) {
+	String sql = "select * from task where TaskType = 'rec' and UserId = ?";
 	List<TaskBean> taskBeans = new ArrayList<TaskBean>();
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement statement = connection.prepareStatement(sql);
+	    statement.setString(1, userId);
 	    ResultSet rs = statement.executeQuery();
 	    while (rs.next()) {
 		TaskBean task = null;
@@ -113,13 +114,14 @@ public class TaskDAO {
 	return config;
     }
 
-    public List<TaskBean> getEvaluationTasks() {
-	String sql = "select * from task where TaskType = 'eval'";
+    public List<TaskBean> getEvaluationTasks(String userId) {
+	String sql = "select * from task where TaskType = 'eval' and UserId = ?";
 
 	List<TaskBean> taskBeans = new ArrayList<TaskBean>();
 	try {
 	    connection = dataSource.getConnection();
 	    PreparedStatement statement = connection.prepareStatement(sql);
+	    statement.setString(1, userId);
 	    ResultSet rs = statement.executeQuery();
 	    while (rs.next()) {
 		TaskBean task = null;

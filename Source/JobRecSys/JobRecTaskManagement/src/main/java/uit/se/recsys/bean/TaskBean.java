@@ -53,7 +53,14 @@ public abstract class TaskBean {
     }
 
     public int getTopn() {
-        return Integer.valueOf((String) this.config.get("topn"));
+	String tmp = "";
+	for(MetricBean mb : this.metrics){
+	    if(mb.getName().contains("R@")){
+		tmp = mb.getName();
+		break;
+	    }
+	}
+	return Integer.valueOf(tmp.substring(2));
     }
     public void setTopn(int topn) {
         this.topn = topn;

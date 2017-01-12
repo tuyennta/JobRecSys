@@ -21,6 +21,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -125,17 +126,18 @@ public class EvaluationController {
 	return taskBO.getTaskStatus("eval");
     }
     
-    @RequestMapping(value={"/xoa-danh-gia"}, method=RequestMethod.GET)    
-    public String deleteTask(HttpSession session, Model model, @RequestParam String taskid){
+    @RequestMapping(value={"/xoa-danh-gia"}, method=RequestMethod.POST)    
+    @ResponseBody
+    public String deleteTask(HttpSession session, Model model, @RequestBody String taskId){
 	/* Check logged in user */
 	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
 	    return "redirect:/dang-nhap";
 	}	
-	
+	taskId = taskId.replace("taskId=", "");
 	//delete task from files
-	TaskBean task = taskBO.getTaskById(Integer.valueOf(taskid));
+	TaskBean task = taskBO.getTaskById(Integer.valueOf(taskId));
 	String path = ROOT_PATH + task.getUserId() + File.separator
-			+ task.getDataset() + "\\evaluation\\" + taskid + "_" + task.getTaskName() + "\\";
+			+ task.getDataset() + "\\evaluation\\" + taskId + "_" + task.getTaskName() + "\\";
 	try {
 	    FileUtils.forceDelete(new File(path));
 	} catch (IOException e) {
@@ -143,7 +145,7 @@ public class EvaluationController {
 	}
 	
 	//delete task from database
-	taskBO.deleteTask(taskid);
+	taskBO.deleteTask(taskId);
 	
 	//binding data again
 	bindingData(model);
@@ -173,13 +175,15 @@ public class EvaluationController {
 
     private void bindingData(Model model) {
 
+	String userId = String.valueOf(SecurityUtil.getInstance().getUserId());
+	
 	/* Binding new TaskBean and dataset to view */
 	model.addAttribute("task", new TaskCFBean());
 	model.addAttribute("datasets", new DatasetUtil().getDatasets(
-			ROOT_PATH + SecurityUtil.getInstance().getUserId()));
+			ROOT_PATH + userId));
 
 	/* Binding list of task to view */
-	model.addAttribute("listTask", taskBO.getAllEvaluationTasks());	
+	model.addAttribute("listTask", taskBO.getAllEvaluationTasks(userId));	
     }
 
     private void executeAlgorithm(String algorithm, String evalType, int evalParam, String input, String output,

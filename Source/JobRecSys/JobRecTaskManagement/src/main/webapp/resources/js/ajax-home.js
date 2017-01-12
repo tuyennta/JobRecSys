@@ -22,3 +22,20 @@ function updateTask(){
 		}
 	});
 }
+
+function deleteTask(taskId){
+	var rs = confirm("Bạn có chắc muốn xóa?");
+	if(rs == true){
+		$("#task"+taskId).remove();	
+		$.ajax({
+			type:'POST',
+			contentType:'application/json',		
+			url:'xoa-task',
+			data:{
+				taskId:taskId
+			},
+			success: function(data) { 	        
+		    }
+		});	
+	}	
+}

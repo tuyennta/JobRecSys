@@ -16,7 +16,7 @@ import uit.se.recsys.bean.UserBean;
 public class UserDAO {
     @Autowired
     DataSource dataSource;
-    
+
     Connection connection = null;
 
     public boolean addUser(UserBean user) {
@@ -85,5 +85,41 @@ public class UserDAO {
 	    e.printStackTrace();
 	}
 	return user;
+    }
+
+    public boolean updateChangePasswordCode(String email, int code) {
+	String sql = "update user set ChangePasswordCode = ? where Email = ?";
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    stm.setInt(1, code);
+	    stm.setString(2, email);
+	    stm.executeUpdate();
+	    stm.close();
+	    connection.close();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return false;
+	}
+	return true;
+    }
+
+    public boolean updatePassword(String email, int code, String newPass) {
+	String sql = "update user set Password = ? where Email = ? and ChangePasswordCode = ?";
+	int result = 0;
+	try {
+	    connection = dataSource.getConnection();
+	    PreparedStatement stm = connection.prepareStatement(sql);
+	    stm.setString(1, newPass);
+	    stm.setString(2, email);
+	    stm.setInt(3, code);
+	    result = stm.executeUpdate();
+	    stm.close();
+	    connection.close();
+	} catch (SQLException e) {
+	    e.printStackTrace();
+	    return false;
+	}
+	return (result != 0);
     }
 }

@@ -144,6 +144,8 @@
 									out.print("<p class='bg-danger'>" + noti + "</p>");
 								}
 							%>
+							
+							<p class='bg-danger' id ='noti'></p>
 							<table class="table table-hover">
 								<thead>
 									<tr>
@@ -158,13 +160,12 @@
 										String[] datasets = (String[]) request.getAttribute("datasets");
 										if (datasets != null) {
 											for (int i = 1; i <= datasets.length; i++) {
-												out.write("<tr>");
+												out.write("<tr id='"+datasets[i - 1]+"'>");
 												out.write("<td>" + i + "</td>");
 												out.write("<td>" + datasets[i - 1] + "</td>");
 												out.write("<td><a href=" + request.getContextPath() + "/thong-ke-du-lieu> Xem thống kê</a></td>");
-												out.write("<td><a href='" + request.getContextPath() + "/xoa-dataset?dsname=" + datasets[i - 1]
-														+ "' class='glyphicon glyphicon-remove' style='color:red;'></a></td>");
-												out.write("<tr>");
+												out.write("<td><a href='#/' onclick=\"deleteDs('" + datasets[i - 1]
+												+ "');\" class='glyphicon glyphicon-remove' style='color:red;'></a></td></tr>");
 											}
 										}
 									%>
@@ -176,5 +177,24 @@
 			</div>
 		</div>
 	</div>
+	<script type="text/javascript">
+	function deleteDs(dsname){
+		var rs = confirm("Bạn có chắc muốn xóa?");
+		if(rs == true){
+			$(dsname).remove();	
+			$.ajax({
+				type:'POST',
+				contentType:'application/json',		
+				url:'xoa-dataset',
+				data:{
+					dsname:dsname
+				},
+				success: function(data) { 	    
+					$('#noti').text(data);					
+			    }
+			});	
+		}	
+	}
+	</script>
 </body>
 </html>

@@ -12,9 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import uit.se.recsys.bo.TaskBO;
@@ -59,17 +61,19 @@ public class DatasetManagementController {
 	}
     }
 
-    @RequestMapping(value = "/xoa-dataset", method = RequestMethod.GET)
+    @RequestMapping(value = "/xoa-dataset", method = RequestMethod.POST)
+    @ResponseBody
     public String deleteDataset(HttpSession session, Model model,
-				@RequestParam String dsname) {
+				@RequestBody String dsname) {
 	if (!SecurityUtil.getInstance().haveUserLoggedIn(session)) {
 	    return "redirect:/dang-nhap";
 	}
 
+	dsname = dsname.replace("dsname=", "");
 	// check if dataset is using
+	String noti = "";
 	if (taskBO.checkIfDatasetIsUsing(dsname)) {
-	    model.addAttribute("noti",
-			    "Dataset này đang được sử dụng không thể xóa, vui lòng xóa các task sử dụng dataset này trước!");
+	    noti = "Dataset này đang được sử dụng không thể xóa, vui lòng xóa các task sử dụng dataset này trước!";
 	} else {
 
 	    // delete
@@ -82,11 +86,7 @@ public class DatasetManagementController {
 	    }
 	}
 
-	// show the others datasets
-	model.addAttribute("datasets", new DatasetUtil().getDatasets(
-			ROOT_PATH + SecurityUtil.getInstance().getUserId()));	
-
-	return "datasetManagement";
+	return noti;
     }
 
     private String saveDataset(MultipartFile[] files, String datasetName) {

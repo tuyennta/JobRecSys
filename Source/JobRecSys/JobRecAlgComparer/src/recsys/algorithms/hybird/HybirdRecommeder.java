@@ -39,20 +39,19 @@ public class HybirdRecommeder extends RecommendationAlgorithm {
 			FileWriter fw = new FileWriter(path + "Score.txt", true);
 			System.out.println("Start writing result!");
 			double alpha = Double.parseDouble(config.getProperty("hb.alpha"));
-			if (this.isRunningEvaluation) {
-				for (String i : rss.keySet()) {
 
-					ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
-					ArrayList<String> jobs = rss.get(i).getJobsArray();
-					CBTopNJobs topNJobs = new CBTopNJobs(topN);
-					for (int k = 0; k < scores.size(); k++) {
-						topNJobs.add(jobs.get(k), scores.get(k));
-					}
-					for (int k = 0; k < topN; k++) {
-						fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
-					}
+			for (String i : rss.keySet()) {
+				ArrayList<Double> scores = rss.get(i).getHybridValue(alpha);
+				ArrayList<String> jobs = rss.get(i).getJobsArray();
+				CBTopNJobs topNJobs = new CBTopNJobs(topN);
+				for (int k = 0; k < scores.size(); k++) {
+					topNJobs.add(jobs.get(k), scores.get(k));
+				}
+				for (int k = 0; k < topN; k++) {
+					fw.append(i + "\t" + topNJobs.TopNjob[k] + "\t" + topNJobs.TopNscore[k] + "\r\n");
 				}
 			}
+
 			if (this.isWriteToDB()) {
 				this.setupDBConnection("recsys");
 				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";

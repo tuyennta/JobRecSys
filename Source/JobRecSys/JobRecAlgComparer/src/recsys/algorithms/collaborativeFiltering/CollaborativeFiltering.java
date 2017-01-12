@@ -343,17 +343,16 @@ public class CollaborativeFiltering extends RecommendationAlgorithm {
 			System.out.println("start writing data");
 			System.out.println("Users: " + listUserIds.size());
 			System.out.println("Recommend Users: " + recommendedList.keySet().size());
-			if(this.isRunningEvaluation){				
-				for (String userId : recommendedList.keySet()) {
-					for (RecommendedItem rec : recommendedList.get(userId)) {
-						wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-						System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
-						wr.newLine();
-					}
+
+			for (String userId : recommendedList.keySet()) {
+				for (RecommendedItem rec : recommendedList.get(userId)) {
+					wr.write(userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+					System.out.println("Result: " + userId + "\t" + rec.getItemID() + "\t" + rec.getValue());
+					wr.newLine();
 				}
 			}
-			if(this.isWriteToDB())
-			{
+
+			if (this.isWriteToDB()) {
 				this.setupDBConnection("recsys");
 				String sql = "insert into rankedlist(Algorithm, AccountId, JobId, Prediction) values ";
 				for (String userId : recommendedList.keySet()) {

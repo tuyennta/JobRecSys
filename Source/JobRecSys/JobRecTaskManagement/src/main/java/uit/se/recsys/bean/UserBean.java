@@ -32,7 +32,7 @@ public class UserBean {
 	}
 
 	@NotNull
-	@Size(max = 7)
+	@Size(max = 20)
 	public String getUserName() {
 		return userName;
 	}
